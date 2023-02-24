@@ -1,4 +1,5 @@
 out.txt
+build-cache/*
 *.out
 .ipynb_checkpoints
 .tags
