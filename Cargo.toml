@@ -1,0 +1,21 @@
+[package]
+name = "umfpack"
+version = "0.0.0"
+edition = "2021"
+authors = ["Floris Laporte <floris.laporte@gmail.com>"]
+license-file = "LICENSE"
+
+[lib]
+name = "umfpack"
+crate-type = ["lib", "cdylib"]
+
+[features]
+c = ["cc"]
+default = ["c"]
+
+[build-dependencies]
+cc = { version="1.0.79", features=["parallel"], optional=true }
+
+[dependencies]
+approx = "0.5.1"
+libc = "0.2.139"
