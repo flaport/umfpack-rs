@@ -1,4 +1,9 @@
+use std::env;
 use std::fs;
+use std::path::PathBuf;
+
+#[cfg(not(feature = "c"))]
+fn main() {}
 
 #[cfg(feature = "c")]
 fn main() {
@@ -27,17 +32,16 @@ fn main() {
 
     let path = format!("examples/example.c");
     println!("cargo:rerun-if-changed=examples/example.c");
-    builder
-        .file(path)
-        .includes(includes)
-        .compile(stem("example"));
+    cached_compilation(&mut builder, &path, &includes, "example.c");
 
     let path = format!("SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
     println!("cargo:rerun-if-changed=SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
-    builder
-        .file(path)
-        .includes(includes)
-        .compile(stem("SuiteSparse_config"));
+    cached_compilation(
+        &mut builder,
+        &path,
+        &includes,
+        "SuiteSparse_config.c",
+    );
 
     let amd = [
         "amd_2.c",
@@ -50,47 +54,28 @@ fn main() {
     for filename in amd {
         let path = format!("SuiteSparse/AMD/Source/{filename}");
         println!("cargo:rerun-if-changed={path}");
-        builder
-            .file(path)
-            .includes(includes)
-            .compile(stem(&filename));
+        cached_compilation(&mut builder, &path, &includes, &filename);
     }
 
-    let camd = [
-        "camd_2.c",
-        "camd_postorder.c",
-    ];
+    let camd = ["camd_2.c", "camd_postorder.c"];
     for filename in camd {
         let path = format!("SuiteSparse/CAMD/Source/{filename}");
         println!("cargo:rerun-if-changed={path}");
-        builder
-            .file(path)
-            .includes(includes)
-            .compile(stem(&filename));
+        cached_compilation(&mut builder, &path, &includes, &filename);
     }
 
-    let colamd = [
-        "colamd.c",
-    ];
+    let colamd = ["colamd.c"];
     for filename in colamd {
         let path = format!("SuiteSparse/COLAMD/Source/{filename}");
         println!("cargo:rerun-if-changed={path}");
-        builder
-            .file(path)
-            .includes(includes)
-            .compile(stem(&filename));
+        cached_compilation(&mut builder, &path, &includes, &filename);
     }
 
-    let ccolamd = [
-        "ccolamd.c",
-    ];
+    let ccolamd = ["ccolamd.c"];
     for filename in ccolamd {
         let path = format!("SuiteSparse/CCOLAMD/Source/{filename}");
         println!("cargo:rerun-if-changed={path}");
-        builder
-            .file(path)
-            .includes(includes)
-            .compile(stem(&filename));
+        cached_compilation(&mut builder, &path, &includes, &filename);
     }
 
     let cholmod = [
@@ -125,10 +110,7 @@ fn main() {
         filename_parts.next();
         let filename = filename_parts.next().unwrap();
         println!("cargo:rerun-if-changed={path}");
-        builder
-            .file(path)
-            .includes(includes)
-            .compile(stem(&filename));
+        cached_compilation(&mut builder, &path, &includes, &filename);
     }
 
     let umfpack = [
@@ -154,12 +136,8 @@ fn main() {
     for filename in umfpack {
         let path = format!("SuiteSparse/UMFPACK/Source/{filename}");
         println!("cargo:rerun-if-changed={path}");
-        builder
-            .file(path)
-            .includes(includes)
-            .compile(stem(&filename));
+        cached_compilation(&mut builder, &path, &includes, &filename);
     }
-
     // let umfpack: Vec<String> = fs::read_dir("SuiteSparse/UMFPACK/Source")
     //     .unwrap()
     //     .map(|f| f.unwrap().file_name().into_string().unwrap())
@@ -167,10 +145,55 @@ fn main() {
     //     .collect();
 }
 
-#[cfg(not(feature = "c"))]
-fn main() {}
-
 fn stem(filename: &str) -> &str {
     let mut parts = filename.split(".");
     return parts.next().unwrap();
+}
+
+fn cached_compilation(
+    builder: &mut cc::Build,
+    path: &str,
+    includes: &[&str],
+    filename: &str,
+) {
+    let binary = stem(&filename);
+
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let out_binary = format!("{}/{}.o", out_dir.to_str().unwrap(), stem(&path));
+    let out_binary_path = PathBuf::from(&out_binary);
+    let out_folder = out_binary_path.parent().unwrap();
+    let out_library = format!("{}/lib{}.a", out_dir.to_str().unwrap(), binary);
+
+    if !out_folder.exists() {
+        fs::create_dir_all(&out_folder).unwrap();
+    }
+
+    let cache_dir = out_dir.parent().unwrap().parent().unwrap();
+    let cached_binary = format!(
+        "{}/umfpack/out/{}.o",
+        cache_dir.to_str().unwrap(),
+        stem(&path)
+    );
+    let cached_binary_path = PathBuf::from(&cached_binary);
+    let cached_folder = cached_binary_path.parent().unwrap();
+    let cached_library = format!(
+        "{}/umfpack/out/lib{}.a",
+        cache_dir.to_str().unwrap(),
+        binary
+    );
+    let cached_library_path = PathBuf::from(&cached_library);
+
+    if !cached_folder.exists() {
+        fs::create_dir_all(&cached_folder).unwrap();
+    }
+
+    if cached_binary_path.exists() & cached_library_path.exists() {
+        std::fs::copy(&cached_binary, &out_binary).unwrap();
+        std::fs::copy(&cached_library, &out_library).unwrap();
+        return;
+    }
+
+    builder.file(path).includes(includes).compile(binary);
+    std::fs::copy(&out_binary, &cached_binary).unwrap();
+    std::fs::copy(&out_library, &cached_library).unwrap();
 }
