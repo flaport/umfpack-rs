@@ -3,6 +3,7 @@
 
 int example(void)
 {
+  printf("hoi\n");
   int n = 5;
   int Ap[] = { 0, 2, 5, 9, 10, 12 };
   int Ai[] = { 0, 1, 0, 2, 4, 1, 2, 3, 4, 2, 1, 4 };

@@ -32,16 +32,11 @@ fn main() {
 
     let path = format!("examples/example.c");
     println!("cargo:rerun-if-changed=examples/example.c");
-    cached_compilation(&mut builder, &path, &includes, "example.c");
+    builder.file(path).includes(includes).compile("example.c"); // we don't want to cache our own code
 
     let path = format!("SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
     println!("cargo:rerun-if-changed=SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
-    cached_compilation(
-        &mut builder,
-        &path,
-        &includes,
-        "SuiteSparse_config.c",
-    );
+    cached_compilation(&mut builder, &path, &includes, "SuiteSparse_config.c");
 
     let amd = [
         "amd_2.c",
@@ -150,50 +145,46 @@ fn stem(filename: &str) -> &str {
     return parts.next().unwrap();
 }
 
-fn cached_compilation(
-    builder: &mut cc::Build,
-    path: &str,
-    includes: &[&str],
-    filename: &str,
-) {
+fn cached_compilation(builder: &mut cc::Build, path: &str, includes: &[&str], filename: &str) {
     let binary = stem(&filename);
 
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let out_binary = format!("{}/{}.o", out_dir.to_str().unwrap(), stem(&path));
-    let out_binary_path = PathBuf::from(&out_binary);
-    let out_folder = out_binary_path.parent().unwrap();
-    let out_library = format!("{}/lib{}.a", out_dir.to_str().unwrap(), binary);
+    // let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    // let out_binary = format!("{}/{}.o", out_dir.to_str().unwrap(), stem(&path));
+    // let out_binary_path = PathBuf::from(&out_binary);
+    // let out_folder = out_binary_path.parent().unwrap();
+    // let out_library = format!("{}/lib{}.a", out_dir.to_str().unwrap(), binary);
 
-    if !out_folder.exists() {
-        fs::create_dir_all(&out_folder).unwrap();
-    }
+    // if !out_folder.exists() {
+    //     fs::create_dir_all(&out_folder).unwrap();
+    // }
 
-    let cache_dir = out_dir.parent().unwrap().parent().unwrap();
-    let cached_binary = format!(
-        "{}/umfpack/out/{}.o",
-        cache_dir.to_str().unwrap(),
-        stem(&path)
-    );
-    let cached_binary_path = PathBuf::from(&cached_binary);
-    let cached_folder = cached_binary_path.parent().unwrap();
-    let cached_library = format!(
-        "{}/umfpack/out/lib{}.a",
-        cache_dir.to_str().unwrap(),
-        binary
-    );
-    let cached_library_path = PathBuf::from(&cached_library);
+    // let cache_dir = out_dir.parent().unwrap().parent().unwrap();
+    // let cached_binary = format!(
+    //     "{}/umfpack/out/{}.o",
+    //     cache_dir.to_str().unwrap(),
+    //     stem(&path)
+    // );
+    // let cached_binary_path = PathBuf::from(&cached_binary);
+    // let cached_folder = cached_binary_path.parent().unwrap();
+    // let cached_library = format!(
+    //     "{}/umfpack/out/lib{}.a",
+    //     cache_dir.to_str().unwrap(),
+    //     binary
+    // );
+    // let cached_library_path = PathBuf::from(&cached_library);
 
-    if !cached_folder.exists() {
-        fs::create_dir_all(&cached_folder).unwrap();
-    }
+    // if !cached_folder.exists() {
+    //     fs::create_dir_all(&cached_folder).unwrap();
+    // }
 
-    if cached_binary_path.exists() & cached_library_path.exists() {
-        std::fs::copy(&cached_binary, &out_binary).unwrap();
-        std::fs::copy(&cached_library, &out_library).unwrap();
-        return;
-    }
+    // if cached_binary_path.exists() & cached_library_path.exists() {
+    //     return;
+    // }
+
+    // let mut includes2: Vec<&str> = includes.iter().map(|x| *x).collect();
+    // includes2.extend([out_dir.to_str().unwrap(), out_folder.to_str().unwrap()]);
 
     builder.file(path).includes(includes).compile(binary);
-    std::fs::copy(&out_binary, &cached_binary).unwrap();
-    std::fs::copy(&out_library, &cached_library).unwrap();
+    // std::fs::copy(&out_binary, &cached_binary).unwrap();
+    // std::fs::copy(&out_library, &cached_library).unwrap();
 }
