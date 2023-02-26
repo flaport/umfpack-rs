@@ -7,18 +7,17 @@ use std::path::PathBuf;
 
 fn main() {
     let mut builder = Build::new();
+    builder
+        .flag("-fopenmp")
+        .flag("-static")
+        .includes(suitesparse_includes());
 
     build_blas(&mut builder);
     build_suitesparse(&mut builder);
 
     let path = format!("examples/example1.c");
     println!("cargo:rerun-if-changed=examples/example1.c");
-    builder
-        .file(path)
-        .includes(suitesparse_includes())
-        .flag("-fopenmp")
-        .flag("-static")
-        .compile("example1");
+    builder.file(path).compile("example1");
 }
 
 fn suitesparse_includes<'a>() -> Vec<&'a str> {
@@ -261,9 +260,7 @@ fn cached_compilation(
 
     builder
         .file(path)
-        .includes(includes)
-        .flag("-fopenmp")
-        .flag("-static")
+        //.includes(includes)
         .compile(binary);
     std::fs::copy(&out_binary, &cached_binary).unwrap();
     std::fs::copy(&out_library, &cached_library).unwrap();
