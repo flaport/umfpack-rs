@@ -1,3 +1,4 @@
+use array_init::array_init;
 use libc::strlen;
 use std::ffi::c_void;
 use std::slice;
@@ -14,7 +15,7 @@ mod c {
             Ai: *const i32,
             Ax: *const f64,
             Symbolic: *mut *mut c_void,
-            Control: *const f64,
+            Control: *mut f64,
             Info: *mut f64,
         ) -> i32;
         pub fn umfpack_di_numeric(
@@ -23,7 +24,7 @@ mod c {
             Ax: *const f64,
             Symbolic: *mut c_void,
             Numeric: *mut *mut c_void,
-            Control: *const f64,
+            Control: *mut f64,
             Info: *mut f64,
         ) -> i32;
         pub fn umfpack_di_free_symbolic(Symbolic: *mut *mut c_void);
@@ -36,7 +37,7 @@ mod c {
             X: *mut f64,
             B: *const f64,
             Numeric: *mut c_void,
-            Control: *const f64,
+            Control: *mut f64,
             Info: *mut f64,
         ) -> i32;
     }
@@ -71,11 +72,9 @@ pub fn umfpack_di_symbolic(
     Ai: &[i32],
     Ax: &[f64],
     symbolic: &mut Symbolic,
-    //Control: None,
-    //Info: None,
+    control: &mut Control,
+    info: &mut Info,
 ) -> i32 {
-    let control: *mut f64 = std::ptr::null_mut();
-    let info: *mut f64 = std::ptr::null_mut();
     unsafe {
         c::umfpack_di_symbolic(
             n,
@@ -84,8 +83,8 @@ pub fn umfpack_di_symbolic(
             Ai.as_ptr(),
             Ax.as_ptr(),
             &mut symbolic._data as *mut *mut c_void,
-            control,
-            info,
+            control._data.as_mut_ptr(),
+            info._data.as_mut_ptr(),
         )
     }
 }
@@ -109,11 +108,9 @@ pub fn umfpack_di_numeric(
     Ax: &[f64],
     symbolic: &Symbolic,
     numeric: &mut Numeric,
-    //Control: None,
-    //Info: None,
+    control: &mut Control,
+    info: &mut Info,
 ) -> i32 {
-    let control: *mut f64 = std::ptr::null_mut();
-    let info: *mut f64 = std::ptr::null_mut();
     unsafe {
         c::umfpack_di_numeric(
             Ap.as_ptr(),
@@ -121,8 +118,8 @@ pub fn umfpack_di_numeric(
             Ax.as_ptr(),
             symbolic._data,
             &mut numeric._data as *mut *mut c_void,
-            control,
-            info,
+            control._data.as_mut_ptr(),
+            info._data.as_mut_ptr(),
         )
     }
 }
@@ -185,11 +182,9 @@ pub fn umfpack_di_solve(
     X: &mut [f64],
     B: &[f64],
     numeric: &Numeric,
-    // Control,
-    // Info,
+    control: &mut Control,
+    info: &mut Info,
 ) -> i32 {
-    let control: *mut f64 = std::ptr::null_mut();
-    let info: *mut f64 = std::ptr::null_mut();
     unsafe {
         c::umfpack_di_solve(
             sys.to_int(),
@@ -199,8 +194,8 @@ pub fn umfpack_di_solve(
             X.as_mut_ptr(),
             B.as_ptr(),
             numeric._data,
-            control,
-            info,
+            control._data.as_mut_ptr(),
+            info._data.as_mut_ptr(),
         )
     }
 }
@@ -214,5 +209,29 @@ impl Drop for Symbolic {
 impl Drop for Numeric {
     fn drop(&mut self) {
         umfpack_di_free_numeric(self);
+    }
+}
+
+pub struct Control {
+    _data: [f64; 20],
+}
+
+impl Control {
+    pub fn new() -> Self {
+        return Self {
+            _data: array_init(|_| 0.0),
+        };
+    }
+}
+
+pub struct Info {
+    _data: [f64; 90],
+}
+
+impl Info {
+    pub fn new() -> Self {
+        return Self {
+            _data: array_init(|_| 0.0),
+        };
     }
 }

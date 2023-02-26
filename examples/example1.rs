@@ -1,6 +1,6 @@
 use umfpack::{
-    umfpack_di_numeric, umfpack_di_solve, umfpack_di_symbolic, Numeric, SuiteSparse_BLAS_library,
-    Symbolic, UMFPACK,
+    umfpack_di_numeric, umfpack_di_solve, umfpack_di_symbolic, Control, Info, Numeric,
+    SuiteSparse_BLAS_library, Symbolic, UMFPACK,
 };
 
 #[allow(non_snake_case)]
@@ -14,13 +14,15 @@ fn main() {
     let b = &[8.0, 45.0, -3.0, 3.0, 19.0];
     let x = &mut [0.0, 0.0, 0.0, 0.0, 0.0];
 
+    let mut info = Info::new();
+    let mut control = Control::new();
     let mut symbolic = Symbolic::new();
-    umfpack_di_symbolic(n, n, Ap, Ai, Ax, &mut symbolic);
+    umfpack_di_symbolic(n, n, Ap, Ai, Ax, &mut symbolic, &mut control, &mut info);
 
     let mut numeric = Numeric::new();
-    umfpack_di_numeric(Ap, Ai, Ax, &symbolic, &mut numeric);
+    umfpack_di_numeric(Ap, Ai, Ax, &symbolic, &mut numeric, &mut control, &mut info);
 
-    umfpack_di_solve(UMFPACK::A, Ap, Ai, Ax, x, b, &numeric);
+    umfpack_di_solve(UMFPACK::A, Ap, Ai, Ax, x, b, &numeric, &mut control, &mut info);
 
     for i in 0..(n as usize) {
         println!("x [{}] = {:.1}", i, x[i]);
