@@ -213,26 +213,26 @@ impl Drop for Numeric {
 }
 
 pub struct Control {
-    prl: i32,
-    dense_row: f64,
-    dense_col: f64,
-    pivot_tolerance: f64,
-    block_size: i32,
-    strategy: Strategy,
-    alloc_init: f64,
-    irstep: i32,
-    compiled_with_blas: bool,
-    thresh_sym: f64,
-    ordering: Ordering,
-    singletons: bool,
-    thresh_nnzdiag: f64,
-    fixq: i32,
-    amd_dense: f64,
-    sym_pivot_tolerance: f64,
-    scale: Scale,
-    front_alloc_init: f64,
-    droptol: i32,
-    aggressive: bool,
+    pub prl: i32,
+    pub dense_row: f64,
+    pub dense_col: f64,
+    pub pivot_tolerance: f64,
+    pub block_size: i32,
+    pub strategy: Strategy,
+    pub alloc_init: f64,
+    pub irstep: i32,
+    pub compiled_with_blas: bool,
+    pub thresh_sym: f64,
+    pub ordering: Ordering,
+    pub singletons: bool,
+    pub thresh_nnzdiag: f64,
+    pub fixq: i32,
+    pub amd_dense: f64,
+    pub sym_pivot_tolerance: f64,
+    pub scale: Scale,
+    pub front_alloc_init: f64,
+    pub droptol: i32,
+    pub aggressive: bool,
 }
 
 impl Control {
@@ -354,7 +354,7 @@ impl Ordering {
 }
 
 pub struct Info {
-    pub _data: [f64; 90],
+    _data: [f64; 90],
 }
 
 impl Info {
