@@ -14,24 +14,24 @@ fn main(){
 #[allow(non_snake_case)]
 fn example1_rs() {
     let n = 5;
-    let Ap = &[0, 2, 5, 9, 10, 12];
-    let Ai = &[0, 1, 0, 2, 4, 1, 2, 3, 4, 2, 1, 4];
-    let Ax = &[2.0, 3.0, 3.0, -1.0, 4.0, 4.0, -3.0, 1.0, 2.0, 2.0, 6.0, 1.0];
-    let b = &[8.0, 45.0, -3.0, 3.0, 19.0];
-    let x = &mut [0.0, 0.0, 0.0, 0.0, 0.0];
+    let Ap = vec![0, 2, 5, 9, 10, 12];
+    let Ai = vec![0, 1, 0, 2, 4, 1, 2, 3, 4, 2, 1, 4];
+    let Ax = vec![2.0, 3.0, 3.0, -1.0, 4.0, 4.0, -3.0, 1.0, 2.0, 2.0, 6.0, 1.0];
+    let B = vec![8.0, 45.0, -3.0, 3.0, 19.0];
+    let mut X = vec![0.0, 0.0, 0.0, 0.0, 0.0];
 
     let mut info = Info::new();
     let control = Control::new();
     let mut symbolic = Symbolic::new();
-    umfpack_di_symbolic(n, n, Ap, Ai, Ax, &mut symbolic, &control, &mut info);
+    umfpack_di_symbolic(n, n, &Ap, &Ai, &Ax, &mut symbolic, &control, &mut info);
 
     let mut numeric = Numeric::new();
-    umfpack_di_numeric(Ap, Ai, Ax, &symbolic, &mut numeric, &control, &mut info);
+    umfpack_di_numeric(&Ap, &Ai, &Ax, &symbolic, &mut numeric, &control, &mut info);
 
-    umfpack_di_solve(UMFPACK::A, Ap, Ai, Ax, x, b, &numeric, &control, &mut info);
+    umfpack_di_solve(UMFPACK::A, &Ap, &Ai, &Ax, &mut X, &B, &numeric, &control, &mut info);
 
     for i in 0..(n as usize) {
-        println!("x [{}] = {:.1}", i, x[i]);
+        println!("X [{}] = {:.1}", i, X[i]);
     }
 
 }
