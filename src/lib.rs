@@ -112,7 +112,7 @@ pub fn umfpack_di_numeric(
     Ap: &[i32],
     Ai: &[i32],
     Ax: &[f64],
-    symbolic: &mut Symbolic,
+    symbolic: &Symbolic,
     numeric: &mut Numeric,
     //Control: None,
     //Info: None,
@@ -189,7 +189,7 @@ pub fn umfpack_di_solve(
     Ax: &[f64],
     X: &mut [f64],
     B: &[f64],
-    numeric: &mut Numeric,
+    numeric: &Numeric,
     // Control,
     // Info,
 ) -> i32 {

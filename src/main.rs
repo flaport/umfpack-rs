@@ -20,11 +20,11 @@ fn main() {
     umfpack_di_symbolic(n, n, Ap, Ai, Ax, &mut symbolic);
 
     let mut numeric = Numeric::new();
-    umfpack_di_numeric(Ap, Ai, Ax, &mut symbolic, &mut numeric);
+    umfpack_di_numeric(Ap, Ai, Ax, &symbolic, &mut numeric);
 
     umfpack_di_free_symbolic(&mut symbolic);
 
-    umfpack_di_solve(UMFPACK::A, Ap, Ai, Ax, x, b, &mut numeric);
+    umfpack_di_solve(UMFPACK::A, Ap, Ai, Ax, x, b, &numeric);
     umfpack_di_free_numeric(&mut numeric);
 
     for i in 0..(n as usize) {
