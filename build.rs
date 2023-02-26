@@ -19,6 +19,7 @@ fn main() {
     builder
         .file(path)
         .includes(suitesparse_includes())
+        .flag("-lblas")
         .compile("example");
 }
 
@@ -150,60 +151,23 @@ fn build_suitesparse(builder: &mut Build) {
         cached_compilation(builder, &path, &includes, &filename, build_cache);
     }
 
-    let umfpack = [
-        "umf_analyze.c",
-        "umf_apply_order.c",
-        "umf_cholmod.c",
-        "umf_colamd.c",
-        "umf_free.c",
-        "umf_fsize.c",
-        "umf_is_permutation.c",
-        "umf_malloc.c",
-        "umf_set_stats.c",
-        "umf_singletons.c",
-        "umf_symbolic_usage.c",
-        "umf_transpose.c",
-        "umfpack_free_symbolic.c",
-        "umfpack_numeric.c",
-        "umfpack_qsymbolic.c",
-        "umfpack_symbolic.c",
-        "umfpack_tictoc.c",
-        "umfpack_timer.c",
-        "umf_kernel.c",
-        "umf_realloc.c",
-        "umf_valid_symbolic.c",
-        "umfpack_free_numeric.c",
-        "umf_kernel_init.c",
-        "umf_local_search.c",
-        "umf_create_element.c",
-        "umf_kernel_wrapup.c",
-        "umf_build_tuples.c",
-        "umf_tuple_lengths.c",
-        "umf_mem_free_tail_block.c",
-        "umf_mem_alloc_tail_block.c",
-        "umf_mem_alloc_element.c",
-        "umf_mem_alloc_head_block.c",
-        "umf_mem_init_memoryspace.c",
-        "umf_scale.c",
-        "umf_get_memory.c",
-        "umf_garbage_collection.c",
-        "umf_row_search.c",
-        "umf_store_lu.c",
-        "umf_blas3_update.c",
-        "umf_extend_front.c",
-        "umf_init_front.c",
-        "umf_assemble.c",
-        "umf_scale_column.c",
-        "umf_grow_front.c",
-        "umf_start_front.c",
-    ];
-    let umfpack: &Vec<String> = &fs::read_dir(&cache_dir)
+    let umfpack: &Vec<String> = &fs::read_dir("SuiteSparse/UMFPACK/Source")
         .unwrap()
         .map(|f| f.unwrap().file_name().into_string().unwrap())
-        .filter(|f| f.ends_with(".a"))
+        .filter(|f| f.ends_with(".c"))
         .collect();
     for filename in umfpack {
         let path = format!("SuiteSparse/UMFPACK/Source/{filename}");
+        cached_compilation(builder, &path, &includes, &filename, build_cache);
+    }
+
+    let umfpack2: &Vec<String> = &fs::read_dir("SuiteSparse/UMFPACK/Source2")
+        .unwrap()
+        .map(|f| f.unwrap().file_name().into_string().unwrap())
+        .filter(|f| f.ends_with(".c"))
+        .collect();
+    for filename in umfpack2 {
+        let path = format!("SuiteSparse/UMFPACK/Source2/{filename}");
         cached_compilation(builder, &path, &includes, &filename, build_cache);
     }
 }
@@ -281,7 +245,11 @@ fn cached_compilation(
     let mut includes2: Vec<&str> = includes.iter().map(|x| *x).collect();
     includes2.extend([out_dir.to_str().unwrap(), out_folder.to_str().unwrap()]);
 
-    builder.file(path).includes(includes).compile(binary);
+    builder
+        .file(path)
+        .includes(includes)
+        .flag("-lblas")
+        .compile(binary);
     std::fs::copy(&out_binary, &cached_binary).unwrap();
     std::fs::copy(&out_library, &cached_library).unwrap();
 }
