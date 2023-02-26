@@ -36,6 +36,12 @@ mod c {
             Control: *const f64,
             Info: *mut f64,
         ) -> i32;
+        pub fn umfpack_di_free_symbolic(
+            Symbolic: *mut *mut c_void,
+        );
+        pub fn umfpack_di_free_numeric(
+            Numeric: *mut *mut c_void,
+        );
     }
 }
 
@@ -150,3 +156,16 @@ pub fn umfpack_di_numeric(
         )
     }
 }
+
+pub fn umfpack_di_free_symbolic(symbolic: &mut Symbolic){
+    unsafe {
+        c::umfpack_di_free_symbolic(&mut symbolic._data as *mut *mut c_void)
+    }
+}
+
+pub fn umfpack_di_free_numeric(numeric: &mut Numeric){
+    unsafe {
+        c::umfpack_di_free_numeric(&mut numeric._data as *mut *mut c_void)
+    }
+}
+

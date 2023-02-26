@@ -1,6 +1,6 @@
 use umfpack::{
     solve, umfpack_di_numeric, umfpack_di_symbolic, Numeric, SuiteSparse_BLAS_library,
-    Symbolic,
+    Symbolic, umfpack_di_free_symbolic
 };
 
 #[allow(non_snake_case)]
@@ -20,6 +20,8 @@ fn main() {
 
     let mut numeric = Numeric::new();
     umfpack_di_numeric(Ap, Ai, Ax, &mut symbolic, &mut numeric);
+
+    umfpack_di_free_symbolic(&mut symbolic);
 
     solve(n, Ap, Ai, Ax, b, &mut symbolic, &mut numeric);
 }

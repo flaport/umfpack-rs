@@ -16,6 +16,8 @@ void example()
   void* Numeric;
   (void)umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, null, null);
 
+  umfpack_di_free_symbolic(&Symbolic);
+
   solve(n, Ap, Ai, Ax, b, Symbolic, Numeric);
 }
 
@@ -30,7 +32,6 @@ void solve(
 {
   double* null = (double*)NULL;
 
-  umfpack_di_free_symbolic(&Symbolic);
 
   double x[5];
   (void)umfpack_di_solve(UMFPACK_A, Ap, Ai, Ax, x, b, Numeric, null, null);
