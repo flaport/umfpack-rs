@@ -1,6 +1,6 @@
 use umfpack::{
-    example, umfpack_di_numeric, umfpack_di_solve, umfpack_di_symbolic, Numeric,
-    SuiteSparse_BLAS_library, Symbolic, UMFPACK,
+    umfpack_di_numeric, umfpack_di_solve, umfpack_di_symbolic, Numeric, SuiteSparse_BLAS_library,
+    Symbolic, UMFPACK,
 };
 
 #[allow(non_snake_case)]
@@ -14,8 +14,6 @@ fn main() {
     let b = &[8.0, 45.0, -3.0, 3.0, 19.0];
     let x = &mut [0.0, 0.0, 0.0, 0.0, 0.0];
 
-    example();
-
     let mut symbolic = Symbolic::new();
     umfpack_di_symbolic(n, n, Ap, Ai, Ax, &mut symbolic);
 
@@ -26,5 +24,16 @@ fn main() {
 
     for i in 0..(n as usize) {
         println!("x [{}] = {:.1}", i, x[i]);
+    }
+
+    println!("\n--- c-output: ---\n");
+    unsafe {
+        c::example();
+    }
+}
+
+mod c {
+    extern "C" {
+        pub fn example();
     }
 }

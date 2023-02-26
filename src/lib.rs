@@ -6,7 +6,6 @@ mod c {
     use std::ffi::c_void;
 
     extern "C" {
-        pub fn example();
         pub fn SuiteSparse_BLAS_library() -> *const i8;
         pub fn umfpack_di_symbolic(
             n: i32,
@@ -41,10 +40,6 @@ mod c {
             Info: *mut f64,
         ) -> i32;
     }
-}
-
-pub fn example() {
-    unsafe { c::example() }
 }
 
 #[allow(non_snake_case)]
@@ -211,13 +206,13 @@ pub fn umfpack_di_solve(
 }
 
 impl Drop for Symbolic {
-    fn drop(&mut self){
+    fn drop(&mut self) {
         umfpack_di_free_symbolic(self);
     }
 }
 
 impl Drop for Numeric {
-    fn drop(&mut self){
+    fn drop(&mut self) {
         umfpack_di_free_numeric(self);
     }
 }

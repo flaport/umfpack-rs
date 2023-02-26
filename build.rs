@@ -15,15 +15,15 @@ fn main() {
     build_blas(&mut builder);
     build_suitesparse(&mut builder);
 
-    let path = format!("examples/example.c");
-    println!("cargo:rerun-if-changed=examples/example.c");
+    let path = format!("examples/example1.c");
+    println!("cargo:rerun-if-changed=examples/example1.c");
     builder
         .file(path)
         .includes(suitesparse_includes())
         .flag("-fopenmp")
         .flag("-static")
         .flag("-lblas")
-        .compile("example");
+        .compile("example1");
 }
 
 fn suitesparse_includes<'a>() -> Vec<&'a str> {
