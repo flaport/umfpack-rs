@@ -209,3 +209,15 @@ pub fn umfpack_di_solve(
         )
     }
 }
+
+impl Drop for Symbolic {
+    fn drop(&mut self){
+        umfpack_di_free_symbolic(self);
+    }
+}
+
+impl Drop for Numeric {
+    fn drop(&mut self){
+        umfpack_di_free_numeric(self);
+    }
+}
