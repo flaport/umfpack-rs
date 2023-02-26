@@ -8,15 +8,6 @@ mod c {
     extern "C" {
         pub fn example();
         pub fn SuiteSparse_BLAS_library() -> *const i8;
-        pub fn solve(
-            n: i32,
-            Ap: *const i32,
-            Ai: *const i32,
-            Ax: *const f64,
-            b: *const f64,
-            Symbolic: *mut c_void,
-            Numeric: *mut c_void,
-        );
         pub fn umfpack_di_symbolic(
             n: i32,
             m: i32,
@@ -36,40 +27,24 @@ mod c {
             Control: *const f64,
             Info: *mut f64,
         ) -> i32;
-        pub fn umfpack_di_free_symbolic(
-            Symbolic: *mut *mut c_void,
-        );
-        pub fn umfpack_di_free_numeric(
-            Numeric: *mut *mut c_void,
-        );
+        pub fn umfpack_di_free_symbolic(Symbolic: *mut *mut c_void);
+        pub fn umfpack_di_free_numeric(Numeric: *mut *mut c_void);
+        pub fn umfpack_di_solve(
+            sys: i32,
+            Ap: *const i32,
+            Ai: *const i32,
+            Ax: *const f64,
+            X: *mut f64,
+            B: *const f64,
+            Numeric: *mut c_void,
+            Control: *const f64,
+            Info: *mut f64,
+        ) -> i32;
     }
 }
 
 pub fn example() {
     unsafe { c::example() }
-}
-
-#[allow(non_snake_case)]
-pub fn solve(
-    n: i32,
-    Ap: &[i32],
-    Ai: &[i32],
-    Ax: &[f64],
-    b: &[f64],
-    symbolic: &mut Symbolic,
-    numeric: &mut Numeric,
-) {
-    unsafe {
-        c::solve(
-            n,
-            Ap.as_ptr(),
-            Ai.as_ptr(),
-            Ax.as_ptr(),
-            b.as_ptr(),
-            symbolic._data,
-            numeric._data,
-        )
-    }
 }
 
 #[allow(non_snake_case)]
@@ -157,15 +132,80 @@ pub fn umfpack_di_numeric(
     }
 }
 
-pub fn umfpack_di_free_symbolic(symbolic: &mut Symbolic){
-    unsafe {
-        c::umfpack_di_free_symbolic(&mut symbolic._data as *mut *mut c_void)
+pub fn umfpack_di_free_symbolic(symbolic: &mut Symbolic) {
+    unsafe { c::umfpack_di_free_symbolic(&mut symbolic._data as *mut *mut c_void) }
+}
+
+pub fn umfpack_di_free_numeric(numeric: &mut Numeric) {
+    unsafe { c::umfpack_di_free_numeric(&mut numeric._data as *mut *mut c_void) }
+}
+
+#[allow(non_camel_case_types)]
+pub enum UMFPACK {
+    A,     /* Ax=b    */
+    At,    /* A'x=b   */
+    Aat,   /* A.'x=b  */
+    Pt_L,  /* P'Lx=b  */
+    L,     /* Lx=b    */
+    Lt_P,  /* L'Px=b  */
+    Lat_P, /* L.'Px=b */
+    Lt,    /* L'x=b   */
+    Lat,   /* L.'x=b  */
+    U_Qt,  /* UQ'x=b  */
+    U,     /* Ux=b    */
+    Q_Ut,  /* QU'x=b  */
+    Q_Uat, /* QU.'x=b */
+    Ut,    /* U'x=b   */
+    Uat,   /* U.'x=b  */
+}
+
+impl UMFPACK {
+    pub fn to_int(&self) -> i32 {
+        match self {
+            UMFPACK::A => 0,
+            UMFPACK::At => 1,
+            UMFPACK::Aat => 2,
+            UMFPACK::Pt_L => 3,
+            UMFPACK::L => 4,
+            UMFPACK::Lt_P => 5,
+            UMFPACK::Lat_P => 6,
+            UMFPACK::Lt => 7,
+            UMFPACK::Lat => 8,
+            UMFPACK::U_Qt => 9,
+            UMFPACK::U => 10,
+            UMFPACK::Q_Ut => 11,
+            UMFPACK::Q_Uat => 12,
+            UMFPACK::Ut => 13,
+            UMFPACK::Uat => 14,
+        }
     }
 }
 
-pub fn umfpack_di_free_numeric(numeric: &mut Numeric){
+#[allow(non_snake_case)]
+pub fn umfpack_di_solve(
+    sys: UMFPACK,
+    Ap: &[i32],
+    Ai: &[i32],
+    Ax: &[f64],
+    X: &mut [f64],
+    B: &[f64],
+    numeric: &mut Numeric,
+    // Control,
+    // Info,
+) -> i32 {
+    let control: *mut f64 = std::ptr::null_mut();
+    let info: *mut f64 = std::ptr::null_mut();
     unsafe {
-        c::umfpack_di_free_numeric(&mut numeric._data as *mut *mut c_void)
+        c::umfpack_di_solve(
+            sys.to_int(),
+            Ap.as_ptr(),
+            Ai.as_ptr(),
+            Ax.as_ptr(),
+            X.as_mut_ptr(),
+            B.as_ptr(),
+            numeric._data,
+            control,
+            info,
+        )
     }
 }
-
