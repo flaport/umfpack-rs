@@ -10,19 +10,26 @@ void example()
   double b[] = { 8., 45., -3., 3., 19. };
   double* null = (double*)NULL;
 
-  void *Symbolic;
+  void* Symbolic;
   (void)umfpack_di_symbolic(n, n, Ap, Ai, Ax, &Symbolic, null, null);
 
-  solve(n, Ap, Ai, Ax, b, Symbolic);
+  void* Numeric;
+  (void)umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, null, null);
+
+  solve(n, Ap, Ai, Ax, b, Symbolic, Numeric);
 }
 
-void solve(const int n, const int Ap[], const int Ai[], const double Ax[], const double b[], void *Symbolic)
+void solve(
+    const int n, 
+    const int Ap[], 
+    const int Ai[], 
+    const double Ax[], 
+    const double b[], 
+    void* Symbolic, 
+    void* Numeric)
 {
   double* null = (double*)NULL;
 
-
-  void *Numeric;
-  (void)umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, null, null);
   umfpack_di_free_symbolic(&Symbolic);
 
   double x[5];

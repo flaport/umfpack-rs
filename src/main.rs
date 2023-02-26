@@ -1,4 +1,7 @@
-use umfpack::{solve, umfpack_di_symbolic, SuiteSparse_BLAS_library, Symbolic, example};
+use umfpack::{
+    solve, umfpack_di_numeric, umfpack_di_symbolic, Numeric, SuiteSparse_BLAS_library,
+    Symbolic,
+};
 
 #[allow(non_snake_case)]
 fn main() {
@@ -15,5 +18,8 @@ fn main() {
     let mut symbolic = Symbolic::new();
     umfpack_di_symbolic(n, n, Ap, Ai, Ax, &mut symbolic);
 
-    solve(n, Ap, Ai, Ax, b, &mut symbolic);
+    let mut numeric = Numeric::new();
+    umfpack_di_numeric(Ap, Ai, Ax, &mut symbolic, &mut numeric);
+
+    solve(n, Ap, Ai, Ax, b, &mut symbolic, &mut numeric);
 }
