@@ -1,7 +1,7 @@
 #include "umfpack.h"
 #include <stdio.h>
 
-void example()
+void example1()
 {
   int n = 5;
   int Ap[] = { 0, 2, 5, 9, 10, 12 };
@@ -23,5 +23,5 @@ void example()
   umfpack_di_free_numeric(&Numeric);
 
   for (int i = 0; i < n; i++)
-    printf("x [%d] = %g\n", i, x[i]);
+    printf("x [%d] = %.1f\n", i, x[i]);
 }

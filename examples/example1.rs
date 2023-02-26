@@ -4,8 +4,16 @@ use umfpack::di::{umfpack_di_numeric, umfpack_di_solve, umfpack_di_symbolic, Num
 use umfpack::info::Info;
 use umfpack::sys::UMFPACK;
 
+fn main(){
+    println!("\n--- rust output: ---\n");
+    example1_rs();
+
+    println!("\n\n--- C output: ---\n");
+    example1_c();
+}
+
 #[allow(non_snake_case)]
-fn main() {
+fn example1_rs() {
     let blas_version = SuiteSparse_BLAS_library();
     println!("{blas_version}");
     let n = 5;
@@ -29,14 +37,17 @@ fn main() {
         println!("x [{}] = {:.1}", i, x[i]);
     }
 
-    println!("\n--- c-output: ---\n");
+}
+
+#[allow(non_snake_case)]
+fn example1_c() {
     unsafe {
-        c::example();
+        c::example1();
     }
 }
 
 mod c {
     extern "C" {
-        pub fn example();
+        pub fn example1();
     }
 }
