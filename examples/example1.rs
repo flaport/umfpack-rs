@@ -15,14 +15,14 @@ fn main() {
     let x = &mut [0.0, 0.0, 0.0, 0.0, 0.0];
 
     let mut info = Info::new();
-    let mut control = Control::new();
+    let control = Control::new();
     let mut symbolic = Symbolic::new();
-    umfpack_di_symbolic(n, n, Ap, Ai, Ax, &mut symbolic, &mut control, &mut info);
+    umfpack_di_symbolic(n, n, Ap, Ai, Ax, &mut symbolic, &control, &mut info);
 
     let mut numeric = Numeric::new();
-    umfpack_di_numeric(Ap, Ai, Ax, &symbolic, &mut numeric, &mut control, &mut info);
+    umfpack_di_numeric(Ap, Ai, Ax, &symbolic, &mut numeric, &control, &mut info);
 
-    umfpack_di_solve(UMFPACK::A, Ap, Ai, Ax, x, b, &numeric, &mut control, &mut info);
+    umfpack_di_solve(UMFPACK::A, Ap, Ai, Ax, x, b, &numeric, &control, &mut info);
 
     for i in 0..(n as usize) {
         println!("x [{}] = {:.1}", i, x[i]);
