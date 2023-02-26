@@ -5,6 +5,9 @@ use umfpack::info::Info;
 use umfpack::sys::UMFPACK;
 
 fn main(){
+    let blas_version = SuiteSparse_BLAS_library();
+    println!("{blas_version}\n\n");
+
     println!("\n--- rust output: ---\n");
     example1_rs();
 
@@ -14,8 +17,6 @@ fn main(){
 
 #[allow(non_snake_case)]
 fn example1_rs() {
-    let blas_version = SuiteSparse_BLAS_library();
-    println!("{blas_version}");
     let n = 5;
     let Ap = &[0, 2, 5, 9, 10, 12];
     let Ai = &[0, 1, 0, 2, 4, 1, 2, 3, 4, 2, 1, 4];

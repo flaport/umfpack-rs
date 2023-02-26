@@ -10,13 +10,18 @@ name = "umfpack"
 crate-type = ["lib", "cdylib"]
 
 [features]
-c = ["cc"]
-default = ["c"]
+blas = ["cc"]
+openblas = ["cc"]
+blas-static = ["cc"]
+openblas-static = ["cc"]
+default = ["openblas"]
 
 [build-dependencies]
+cfg-if = "1.0.0"
 cc = { version="1.0.79", features=["parallel"], optional=true }
 
 [dependencies]
 approx = "0.5.1"
 array-init = "2.1.0"
+cfg-if = "1.0.0"
 libc = "0.2.139"

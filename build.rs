@@ -5,10 +5,6 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
-#[cfg(not(feature = "c"))]
-fn main() {}
-
-#[cfg(feature = "c")]
 fn main() {
     let mut builder = Build::new();
 
@@ -22,7 +18,6 @@ fn main() {
         .includes(suitesparse_includes())
         .flag("-fopenmp")
         .flag("-static")
-        .flag("-lblas")
         .compile("example1");
 }
 
@@ -49,13 +44,21 @@ fn suitesparse_includes<'a>() -> Vec<&'a str> {
     ]
 }
 
-fn build_blas(_builder: &mut Build){
-    // TODO: actually build it. Right now linking to dynamic libraries in /usr/lib.
-    println!("cargo:rustc-link-search=/usr/lib");
-    //println!("cargo:rustc-link-lib=static=openblas");
-    println!("cargo:rustc-link-lib=dylib=openblas");
+fn build_blas(_builder: &mut Build) {
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "blas")] {
+            println!("cargo:rustc-link-lib=dylib=blas");
+        } else if  #[cfg(feature = "blas-static")] {
+            println!("cargo:rustc-link-lib=static=blas");
+        } else if  #[cfg(feature = "openblas")] {
+            println!("cargo:rustc-link-lib=dylib=openblas");
+        } else if  #[cfg(feature = "openblas-static")] {
+            println!("cargo:rustc-link-lib=static=openblas");
+        } else {
+            panic!("Please enable one of the following features: 'blas', 'blas-static', 'openblas', 'openblas-static'.")
+        }
+    }
 }
-
 
 fn build_suitesparse(builder: &mut Build) {
     let mut file = fs::File::create("build.log").unwrap();
@@ -261,7 +264,6 @@ fn cached_compilation(
         .includes(includes)
         .flag("-fopenmp")
         .flag("-static")
-        .flag("-lblas")
         .compile(binary);
     std::fs::copy(&out_binary, &cached_binary).unwrap();
     std::fs::copy(&out_library, &cached_library).unwrap();
