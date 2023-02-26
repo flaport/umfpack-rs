@@ -1,7 +1,8 @@
-use umfpack::{
-    umfpack_di_numeric, umfpack_di_solve, umfpack_di_symbolic, Control, Info, Numeric,
-    SuiteSparse_BLAS_library, Symbolic, UMFPACK,
-};
+use umfpack::blas::SuiteSparse_BLAS_library;
+use umfpack::control::Control;
+use umfpack::di::{umfpack_di_numeric, umfpack_di_solve, umfpack_di_symbolic, Numeric, Symbolic};
+use umfpack::info::Info;
+use umfpack::sys::UMFPACK;
 
 #[allow(non_snake_case)]
 fn main() {
