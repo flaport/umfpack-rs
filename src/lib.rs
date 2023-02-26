@@ -213,26 +213,26 @@ impl Drop for Numeric {
 }
 
 pub struct Control {
-    pub prl: i32,
-    pub dense_row: f64,
-    pub dense_col: f64,
-    pub pivot_tolerance: f64,
-    pub block_size: i32,
-    pub strategy: Strategy,
-    pub alloc_init: f64,
-    pub irstep: i32,
-    pub compiled_with_blas: bool,
-    pub thresh_sym: f64,
-    pub ordering: Ordering,
-    pub singletons: bool,
-    pub thresh_nnzdiag: f64,
-    pub fixq: i32,
-    pub amd_dense: f64,
-    pub sym_pivot_tolerance: f64,
-    pub scale: Scale,
-    pub front_alloc_init: f64,
-    pub droptol: i32,
-    pub aggressive: bool,
+    pub prl: i32, /* print level */
+    pub dense_row: f64, /* dense row parameter */
+    pub dense_col: f64, /* dense col parameter */
+    pub pivot_tolerance: f64, /* threshold partial pivoting setting */
+    pub block_size: i32, /* BLAS-3 block size */
+    pub strategy: Strategy, /* umfpack strategy */
+    pub alloc_init: f64, /* initial allocation ratio */
+    pub irstep: i32, /* max # of iterative refinements */
+    pub compiled_with_blas: bool, /* uses the BLAS */
+    pub strategy_thresh_sym: f64, /* symmetry threshold */
+    pub ordering: Ordering, /* ordering method to use */
+    pub singletons: bool, /* singleton filter if true */
+    pub strategy_thresh_nnzdiag: f64, /* nnz(diag(A)) threshold */
+    pub fixq: FixQ, /* fixq */
+    pub amd_dense: f64, /* for AMD ordering */
+    pub sym_pivot_tolerance: f64, /* threshold, only for diag. entries */
+    pub scale: Scale, /* what row scaling to do */
+    pub front_alloc_init: f64, /* frontal matrix allocation ratio */
+    pub droptol: i32, /* drop tolerance for entries in L,U */
+    pub aggressive: bool, /* whether or not to use aggressive */
 }
 
 impl Control {
@@ -244,20 +244,20 @@ impl Control {
             pivot_tolerance: 0.1,
             block_size: 32,
             strategy: Strategy::AUTO,
-            alloc_init: 0.5,
+            alloc_init: 0.7,
             irstep: 2,
             compiled_with_blas: true,
-            thresh_sym: 0.3,
+            strategy_thresh_sym: 0.3,
             ordering: Ordering::AMD,
-            singletons: false,
-            thresh_nnzdiag: 0.9,
-            fixq: 0,
+            singletons: true,
+            strategy_thresh_nnzdiag: 0.9,
+            fixq: FixQ::DEFAULT,
             amd_dense: 10.0,
             sym_pivot_tolerance: 0.001,
             scale: Scale::SUM,
             front_alloc_init: 0.5,
             droptol: 0,
-            aggressive: false,
+            aggressive: true,
         };
     }
     fn _data(&self) -> [f64; 20] {
@@ -271,11 +271,11 @@ impl Control {
         data[6] = self.alloc_init as f64;
         data[7] = self.irstep as f64;
         data[8] = self.compiled_with_blas as i32 as f64;
-        data[9] = self.thresh_sym as f64;
+        data[9] = self.strategy_thresh_sym as f64;
         data[10] = self.ordering.to_int() as f64;
         data[11] = self.singletons as i32 as f64;
-        data[12] = self.thresh_nnzdiag as f64;
-        data[13] = self.fixq as f64;
+        data[12] = self.strategy_thresh_nnzdiag as f64;
+        data[13] = self.fixq.to_int() as f64;
         data[14] = self.amd_dense as f64;
         data[15] = self.sym_pivot_tolerance as f64;
         data[16] = self.scale.to_int() as f64;
@@ -283,6 +283,23 @@ impl Control {
         data[18] = self.droptol as f64;
         data[19] = self.aggressive as i32 as f64;
         return data;
+    }
+}
+
+#[allow(non_camel_case_types)]
+pub enum FixQ {
+    NOFIXQ,
+    DEFAULT,
+    FIXQ,
+}
+
+impl FixQ {
+    pub fn to_int(&self) -> i32{
+        match self {
+            FixQ::NOFIXQ => -1,
+            FixQ::DEFAULT => 0,
+            FixQ::FIXQ => 1,
+        }
     }
 }
 
