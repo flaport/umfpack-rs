@@ -1,8 +1,4 @@
-use umfpack::blas::SuiteSparse_BLAS_library;
-use umfpack::control::Control;
-use umfpack::di::{umfpack_di_numeric, umfpack_di_solve, umfpack_di_symbolic, Numeric, Symbolic};
-use umfpack::info::Info;
-use umfpack::sys::UMFPACK;
+use umfpack::prelude::*;
 
 fn main(){
     let blas_version = SuiteSparse_BLAS_library();
