@@ -12,6 +12,7 @@ fn main() {}
 fn main() {
     let mut builder = Build::new();
 
+    build_blas(&mut builder);
     build_suitesparse(&mut builder);
 
     let path = format!("examples/example.c");
@@ -19,12 +20,14 @@ fn main() {
     builder
         .file(path)
         .includes(suitesparse_includes())
+        .flag("-fopenmp")
+        .flag("-static")
         .flag("-lblas")
         .compile("example");
 }
 
-fn suitesparse_includes<'a>() -> [&'a str; 18] {
-    [
+fn suitesparse_includes<'a>() -> Vec<&'a str> {
+    vec![
         "SuiteSparse/AMD/Include",
         "SuiteSparse/AMD/Source",
         "SuiteSparse/CAMD/Include",
@@ -45,6 +48,14 @@ fn suitesparse_includes<'a>() -> [&'a str; 18] {
         "SuiteSparse/UMFPACK/Source",
     ]
 }
+
+fn build_blas(_builder: &mut Build){
+    // TODO: actually build it. Right now linking to dynamic libraries in /usr/lib.
+    println!("cargo:rustc-link-search=/usr/lib");
+    //println!("cargo:rustc-link-lib=static=openblas");
+    println!("cargo:rustc-link-lib=dylib=openblas");
+}
+
 
 fn build_suitesparse(builder: &mut Build) {
     let mut file = fs::File::create("build.log").unwrap();
@@ -248,6 +259,8 @@ fn cached_compilation(
     builder
         .file(path)
         .includes(includes)
+        .flag("-fopenmp")
+        .flag("-static")
         .flag("-lblas")
         .compile(binary);
     std::fs::copy(&out_binary, &cached_binary).unwrap();
