@@ -18,7 +18,7 @@ int example(void)
   int i;
   void *Symbolic, *Numeric;
   (void)umfpack_di_symbolic(n, n, Ap, Ai, Ax, &Symbolic, null, null);
-  // (void)umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, null, null);
+  (void)umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, null, null);
   // umfpack_di_free_symbolic(&Symbolic);
   // (void)umfpack_di_solve(UMFPACK_A, Ap, Ai, Ax, x, b, Numeric, null, null);
   // umfpack_di_free_numeric(&Numeric);

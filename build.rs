@@ -1,6 +1,8 @@
 use cc::Build;
 use std::env;
 use std::fs;
+use std::fs::OpenOptions;
+use std::io::prelude::*;
 use std::path::PathBuf;
 
 #[cfg(not(feature = "c"))]
@@ -8,10 +10,12 @@ fn main() {}
 
 #[cfg(feature = "c")]
 fn main() {
+    let mut builder = Build::new();
+
+    build_suitesparse(&mut builder);
+
     let path = format!("examples/example.c");
     println!("cargo:rerun-if-changed=examples/example.c");
-    let mut builder = Build::new();
-    build_suitesparse(&mut builder);
     builder
         .file(path)
         .includes(suitesparse_includes())
@@ -42,14 +46,22 @@ fn suitesparse_includes<'a>() -> [&'a str; 18] {
 }
 
 fn build_suitesparse(builder: &mut Build) {
+    let mut file = fs::File::create("build.log").unwrap();
+    file.write_all(b"Start Build\n").unwrap();
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open("build.log")
+        .unwrap();
+
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let cache_dir = out_dir.parent().unwrap().parent().unwrap();
     let cache_dir = format!("{}/umfpack/out", cache_dir.to_str().unwrap());
     let includes = suitesparse_includes();
 
-    let build_cache: &Vec<String> = &match fs::read_dir(cache_dir) {
+    let build_cache: &Vec<String> = &match fs::read_dir(&cache_dir) {
         Ok(v) => {
-            println!("cargo:rustc-link-search=build-cache");
+            println!("cargo:rustc-link-search={cache_dir}");
             v.map(|f| f.unwrap().file_name().into_string().unwrap())
                 .filter(|f| f.ends_with(".a"))
                 .collect()
@@ -57,6 +69,7 @@ fn build_suitesparse(builder: &mut Build) {
         Err(_) => Vec::new(),
     };
     for filename in build_cache.iter() {
+        writeln!(file, "{filename}").unwrap();
         println!(
             "cargo:rustc-link-lib=static={}",
             name_from_filename(filename)
@@ -64,7 +77,6 @@ fn build_suitesparse(builder: &mut Build) {
     }
 
     let path = format!("SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
-    println!("cargo:rerun-if-changed=SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
     cached_compilation(
         builder,
         &path,
@@ -83,28 +95,24 @@ fn build_suitesparse(builder: &mut Build) {
     ];
     for filename in amd {
         let path = format!("SuiteSparse/AMD/Source/{filename}");
-        println!("cargo:rerun-if-changed={path}");
         cached_compilation(builder, &path, &includes, &filename, build_cache);
     }
 
     let camd = ["camd_2.c", "camd_postorder.c"];
     for filename in camd {
         let path = format!("SuiteSparse/CAMD/Source/{filename}");
-        println!("cargo:rerun-if-changed={path}");
         cached_compilation(builder, &path, &includes, &filename, build_cache);
     }
 
     let colamd = ["colamd.c"];
     for filename in colamd {
         let path = format!("SuiteSparse/COLAMD/Source/{filename}");
-        println!("cargo:rerun-if-changed={path}");
         cached_compilation(builder, &path, &includes, &filename, build_cache);
     }
 
     let ccolamd = ["ccolamd.c"];
     for filename in ccolamd {
         let path = format!("SuiteSparse/CCOLAMD/Source/{filename}");
-        println!("cargo:rerun-if-changed={path}");
         cached_compilation(builder, &path, &includes, &filename, build_cache);
     }
 
@@ -139,7 +147,6 @@ fn build_suitesparse(builder: &mut Build) {
         let mut filename_parts = filename.split('/');
         filename_parts.next();
         let filename = filename_parts.next().unwrap();
-        println!("cargo:rerun-if-changed={path}");
         cached_compilation(builder, &path, &includes, &filename, build_cache);
     }
 
@@ -162,10 +169,41 @@ fn build_suitesparse(builder: &mut Build) {
         "umfpack_symbolic.c",
         "umfpack_tictoc.c",
         "umfpack_timer.c",
+        "umf_kernel.c",
+        "umf_realloc.c",
+        "umf_valid_symbolic.c",
+        "umfpack_free_numeric.c",
+        "umf_kernel_init.c",
+        "umf_local_search.c",
+        "umf_create_element.c",
+        "umf_kernel_wrapup.c",
+        "umf_build_tuples.c",
+        "umf_tuple_lengths.c",
+        "umf_mem_free_tail_block.c",
+        "umf_mem_alloc_tail_block.c",
+        "umf_mem_alloc_element.c",
+        "umf_mem_alloc_head_block.c",
+        "umf_mem_init_memoryspace.c",
+        "umf_scale.c",
+        "umf_get_memory.c",
+        "umf_garbage_collection.c",
+        "umf_row_search.c",
+        "umf_store_lu.c",
+        "umf_blas3_update.c",
+        "umf_extend_front.c",
+        "umf_init_front.c",
+        "umf_assemble.c",
+        "umf_scale_column.c",
+        "umf_grow_front.c",
+        "umf_start_front.c",
     ];
+    let umfpack: &Vec<String> = &fs::read_dir(&cache_dir)
+        .unwrap()
+        .map(|f| f.unwrap().file_name().into_string().unwrap())
+        .filter(|f| f.ends_with(".a"))
+        .collect();
     for filename in umfpack {
         let path = format!("SuiteSparse/UMFPACK/Source/{filename}");
-        println!("cargo:rerun-if-changed={path}");
         cached_compilation(builder, &path, &includes, &filename, build_cache);
     }
 }
@@ -189,11 +227,23 @@ fn cached_compilation(
     filename: &str,
     build_cache: &Vec<String>,
 ) {
+    //let mut file = OpenOptions::new()
+    //    .write(true)
+    //    .append(true)
+    //    .open("build.log")
+    //    .unwrap();
+
     let binary = stem(&filename);
     let lib_name = format!("lib{binary}.a");
+
+    //writeln!(file, "{filename}").unwrap();
+
     if build_cache.iter().any(|n| n == &lib_name) {
         return; // already compiled, no need to do it again.
     }
+    //writeln!(file, "compiling...").unwrap();
+
+    println!("cargo:rerun-if-changed={path}");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let out_binary = format!("{}/{}.o", out_dir.to_str().unwrap(), stem(&path));
