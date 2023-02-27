@@ -12,6 +12,10 @@ fn main() {
         .flag("-static")
         .includes(suitesparse_includes());
 
+    println!("cargo:rustc-link-search=/lib");
+    println!("cargo:rustc-link-search=/usr/lib");
+    println!("cargo:rustc-link-lib=dylib=gomp");
+
     build_blas(&mut builder);
     build_suitesparse(&mut builder);
 
@@ -45,14 +49,14 @@ fn suitesparse_includes<'a>() -> Vec<&'a str> {
 
 fn build_blas(_builder: &mut Build) {
     cfg_if::cfg_if! {
-        if #[cfg(feature = "blas")] {
-            println!("cargo:rustc-link-lib=dylib=blas");
-        } else if  #[cfg(feature = "blas-static")] {
+        if #[cfg(feature = "blas-static")] {
             println!("cargo:rustc-link-lib=static=blas");
-        } else if  #[cfg(feature = "openblas")] {
-            println!("cargo:rustc-link-lib=dylib=openblas");
         } else if  #[cfg(feature = "openblas-static")] {
             println!("cargo:rustc-link-lib=static=openblas");
+        } else if  #[cfg(feature = "blas")] {
+            println!("cargo:rustc-link-lib=dylib=blas");
+        } else if  #[cfg(feature = "openblas")] {
+            println!("cargo:rustc-link-lib=dylib=openblas");
         } else {
             panic!("Please enable one of the following features: 'blas', 'blas-static', 'openblas', 'openblas-static'.")
         }
