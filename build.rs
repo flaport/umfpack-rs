@@ -28,30 +28,25 @@ fn main() {
     // why do we need this?
     println!("cargo:rustc-link-lib=dylib=gomp");
 
-    cfg_if! {
-        if #[cfg(feature = "no-blas")] {
-            builder.flag("-DNBLAS");
-        } else {
-            build_blas(&mut builder, &mut log_file)
-        }
-    };
+    let blas = get_blas_feature(&mut log_file);
+    build_blas(&mut builder, &blas);
 
-    let cache_dir = get_build_cache_dir();
+    let cache_dir = get_build_cache_dir(&blas);
 
     #[cfg(feature = "s3_sync")]
     {
-        sync_s3_cache(&cache_dir, &mut log_file);
+        sync_s3_cache(&cache_dir, &mut log_file, &blas);
     }
 
     let build_cache = get_build_cache(&cache_dir);
-    build_suitesparse(&mut builder, &build_cache, &mut log_file);
+    build_suitesparse(&mut builder, &build_cache, &mut log_file, &blas);
 
     let path = format!("examples/example1.c");
     println!("cargo:rerun-if-changed=examples/example1.c");
     builder.file(path).compile("example1");
 }
 
-fn get_build_cache_dir() -> String {
+fn get_build_cache_dir(blas: &str) -> String {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let cache_dir = out_dir
         .parent()
@@ -59,7 +54,8 @@ fn get_build_cache_dir() -> String {
         .parent()
         .unwrap()
         .join("umfpack")
-        .join("out");
+        .join("out")
+        .join(blas);
     if !cache_dir.exists() {
         fs::create_dir_all(&cache_dir).unwrap();
     }
@@ -87,7 +83,7 @@ fn get_build_cache(cache_dir: &str) -> Vec<String> {
 }
 
 #[allow(dead_code)]
-fn build_suitesparse(builder: &mut Build, build_cache: &Vec<String>, log_file: &mut File) {
+fn build_suitesparse(builder: &mut Build, build_cache: &Vec<String>, log_file: &mut File, blas: &str) {
     let path = format!("SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
     cached_compilation(
         builder,
@@ -95,6 +91,7 @@ fn build_suitesparse(builder: &mut Build, build_cache: &Vec<String>, log_file: &
         "SuiteSparse_config.c",
         build_cache,
         log_file,
+        blas,
     );
 
     let amd = [
@@ -107,25 +104,25 @@ fn build_suitesparse(builder: &mut Build, build_cache: &Vec<String>, log_file: &
     ];
     for filename in amd {
         let path = format!("SuiteSparse/AMD/Source/{filename}");
-        cached_compilation(builder, &path, &filename, build_cache, log_file);
+        cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let camd = ["camd_2.c", "camd_postorder.c"];
     for filename in camd {
         let path = format!("SuiteSparse/CAMD/Source/{filename}");
-        cached_compilation(builder, &path, &filename, build_cache, log_file);
+        cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let colamd = ["colamd.c"];
     for filename in colamd {
         let path = format!("SuiteSparse/COLAMD/Source/{filename}");
-        cached_compilation(builder, &path, &filename, build_cache, log_file);
+        cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let ccolamd = ["ccolamd.c"];
     for filename in ccolamd {
         let path = format!("SuiteSparse/CCOLAMD/Source/{filename}");
-        cached_compilation(builder, &path, &filename, build_cache, log_file);
+        cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let cholmod = [
@@ -159,7 +156,7 @@ fn build_suitesparse(builder: &mut Build, build_cache: &Vec<String>, log_file: &
         let mut filename_parts = filename.split('/');
         filename_parts.next();
         let filename = filename_parts.next().unwrap();
-        cached_compilation(builder, &path, &filename, build_cache, log_file);
+        cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let umfpack: &Vec<String> = &fs::read_dir("SuiteSparse/UMFPACK/Source")
@@ -169,7 +166,7 @@ fn build_suitesparse(builder: &mut Build, build_cache: &Vec<String>, log_file: &
         .collect();
     for filename in umfpack {
         let path = format!("SuiteSparse/UMFPACK/Source/{filename}");
-        cached_compilation(builder, &path, &filename, build_cache, log_file);
+        cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let umfpack2: &Vec<String> = &fs::read_dir("SuiteSparse/UMFPACK/Source2")
@@ -179,7 +176,7 @@ fn build_suitesparse(builder: &mut Build, build_cache: &Vec<String>, log_file: &
         .collect();
     for filename in umfpack2 {
         let path = format!("SuiteSparse/UMFPACK/Source2/{filename}");
-        cached_compilation(builder, &path, &filename, build_cache, log_file);
+        cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 }
 
@@ -201,6 +198,7 @@ fn cached_compilation(
     filename: &str,
     build_cache: &Vec<String>,
     log_file: &mut File,
+    blas: &str,
 ) {
     let binary = stem(&filename);
     let lib_name = format!("lib{binary}.a");
@@ -223,15 +221,17 @@ fn cached_compilation(
 
     let cache_dir = out_dir.parent().unwrap().parent().unwrap();
     let cached_binary = format!(
-        "{}/umfpack/out/{}.o",
+        "{}/umfpack/out/{}/{}.o",
         cache_dir.to_str().unwrap(),
+        blas,
         stem(&path)
     );
     let cached_binary_path = PathBuf::from(&cached_binary);
     let cached_folder = cached_binary_path.parent().unwrap();
     let cached_library = format!(
-        "{}/umfpack/out/lib{}.a",
+        "{}/umfpack/out/{}/lib{}.a",
         cache_dir.to_str().unwrap(),
+        blas,
         binary
     );
     let cached_library_path = PathBuf::from(&cached_library);
@@ -274,15 +274,14 @@ fn suitesparse_includes<'a>() -> Vec<&'a str> {
 }
 
 #[cfg(feature = "s3_sync")]
-fn sync_s3_cache(cache_dir: &str, log_file: &mut File) {
+fn sync_s3_cache(cache_dir: &str, log_file: &mut File, blas: &str) {
     use rusoto_core::Region;
     use rusoto_s3::{GetObjectRequest, ListObjectsV2Request, S3Client, S3};
-    use std::path::Path;
     use tokio::runtime::Runtime;
     let region = Region::UsWest2;
     let s3_client = S3Client::new(region);
     let bucket = "umfpack";
-    let prefix = "linux/no-blas";
+    let prefix = format!("linux/{blas}");
     let request = ListObjectsV2Request {
         bucket: bucket.to_owned(),
         prefix: Some(prefix.to_owned()),
@@ -310,25 +309,52 @@ fn sync_s3_cache(cache_dir: &str, log_file: &mut File) {
     }
 }
 
-#[cfg(not(feature = "no-blas"))]
-fn build_blas(_builder: &mut Build, log_file: &mut File) -> String {
-    writeln!(log_file, "building BLAS...").unwrap();
-    cfg_if! {
-        if #[cfg(feature = "blas-static")] {
+fn build_blas(builder: &mut Build, blas: &str) {
+    match blas {
+        "no-blas" => {
+            builder.flag("-DNBLAS");
+        },
+        "blas-static" => {
             println!("cargo:rustc-link-lib=static=blas");
-            "blas-static"
-        } else if  #[cfg(feature = "openblas-static")] {
+        },
+        "openblas-static" => {
             println!("cargo:rustc-link-lib=static=openblas");
-            "openblas-static"
-        } else if  #[cfg(feature = "blas")] {
+        },
+        "blas" => {
             println!("cargo:rustc-link-lib=dylib=blas");
-            "blas"
-        } else if  #[cfg(feature = "openblas")] {
+        },
+        "openblas" => {
             println!("cargo:rustc-link-lib=dylib=openblas");
-            "openblas"
-        } else {
-            panic!("Please enable one of the following features: 'blas', 'blas-static', 'openblas', 'openblas-static'.")
-        }
+        },
+        _ => {
+            let msg = "Please enable one of the following features: ";
+            let msg = format!("{msg} 'no-blas', 'blas', 'blas-static', ");
+            let msg = format!("{msg} 'openblas', 'openblas-static'.");
+            panic!("{msg}");
+        },
     };
 }
 
+fn get_blas_feature(log_file: &mut File) -> String {
+    let mut blas: &str;
+    cfg_if! {
+        if #[cfg(feature = "no-blas")] {
+            blas = "no-blas"
+        } else if #[cfg(feature = "blas-static")] {
+            blas = "blas-static"
+        } else if  #[cfg(feature = "openblas-static")] {
+            blas = "openblas-static"
+        } else if  #[cfg(feature = "blas")] {
+            blas = "blas"
+        } else if  #[cfg(feature = "openblas")] {
+            blas = "openblas"
+        } else {
+            let msg = "Please enable one of the following features: ";
+            let msg = format!("{msg} 'no-blas', 'blas', 'blas-static', ");
+            let msg = format!("{msg} 'openblas', 'openblas-static'.");
+            panic!("{msg}");
+        }
+    };
+    writeln!(log_file, "blas: {blas}").unwrap();
+    return blas.to_owned();
+}
