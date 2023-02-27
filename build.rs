@@ -1,4 +1,5 @@
 use cc::Build;
+use cfg_if::cfg_if;
 use std::env;
 use std::fs;
 use std::fs::OpenOptions;
@@ -14,9 +15,18 @@ fn main() {
 
     println!("cargo:rustc-link-search=/lib");
     println!("cargo:rustc-link-search=/usr/lib");
+
+    // why do we need this?
     println!("cargo:rustc-link-lib=dylib=gomp");
 
-    build_blas(&mut builder);
+    cfg_if! {
+        if #[cfg(feature = "no-blas")] {
+            builder.flag("-DNBLAS");
+        } else {
+            build_blas(&mut builder);
+        }
+    }
+
     build_suitesparse(&mut builder);
 
     let path = format!("examples/example1.c");
@@ -24,31 +34,8 @@ fn main() {
     builder.file(path).compile("example1");
 }
 
-fn suitesparse_includes<'a>() -> Vec<&'a str> {
-    vec![
-        "SuiteSparse/AMD/Include",
-        "SuiteSparse/AMD/Source",
-        "SuiteSparse/CAMD/Include",
-        "SuiteSparse/CAMD/Source",
-        "SuiteSparse/CCOLAMD/Include",
-        "SuiteSparse/CCOLAMD/Source",
-        "SuiteSparse/CHOLMOD",
-        "SuiteSparse/CHOLMOD/Cholesky",
-        "SuiteSparse/CHOLMOD/Config",
-        "SuiteSparse/CHOLMOD/Core",
-        "SuiteSparse/CHOLMOD/Include",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/GKlib",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/include",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/libmetis",
-        "SuiteSparse/COLAMD/Include",
-        "SuiteSparse/COLAMD/Source",
-        "SuiteSparse/UMFPACK/Include",
-        "SuiteSparse/UMFPACK/Source",
-    ]
-}
-
 fn build_blas(_builder: &mut Build) {
-    cfg_if::cfg_if! {
+    cfg_if! {
         if #[cfg(feature = "blas-static")] {
             println!("cargo:rustc-link-lib=static=blas");
         } else if  #[cfg(feature = "openblas-static")] {
@@ -268,4 +255,27 @@ fn cached_compilation(
         .compile(binary);
     std::fs::copy(&out_binary, &cached_binary).unwrap();
     std::fs::copy(&out_library, &cached_library).unwrap();
+}
+
+fn suitesparse_includes<'a>() -> Vec<&'a str> {
+    vec![
+        "SuiteSparse/AMD/Include",
+        "SuiteSparse/AMD/Source",
+        "SuiteSparse/CAMD/Include",
+        "SuiteSparse/CAMD/Source",
+        "SuiteSparse/CCOLAMD/Include",
+        "SuiteSparse/CCOLAMD/Source",
+        "SuiteSparse/CHOLMOD",
+        "SuiteSparse/CHOLMOD/Cholesky",
+        "SuiteSparse/CHOLMOD/Config",
+        "SuiteSparse/CHOLMOD/Core",
+        "SuiteSparse/CHOLMOD/Include",
+        "SuiteSparse/CHOLMOD/SuiteSparse_metis/GKlib",
+        "SuiteSparse/CHOLMOD/SuiteSparse_metis/include",
+        "SuiteSparse/CHOLMOD/SuiteSparse_metis/libmetis",
+        "SuiteSparse/COLAMD/Include",
+        "SuiteSparse/COLAMD/Source",
+        "SuiteSparse/UMFPACK/Include",
+        "SuiteSparse/UMFPACK/Source",
+    ]
 }

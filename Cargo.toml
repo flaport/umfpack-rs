@@ -14,6 +14,7 @@ blas = ["cc"]
 openblas = ["cc"]
 blas-static = ["cc"]
 openblas-static = ["cc"]
+no-blas = ["cc"]
 default = ["openblas"]
 
 [build-dependencies]
