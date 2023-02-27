@@ -10,7 +10,7 @@ name = "umfpack"
 crate-type = ["lib", "cdylib"]
 
 [features]
-s3_sync = ["cc", "rusoto_s3", "rusoto_core", "tokio", "rayon"]
+s3-sync = ["cc", "rusoto_s3", "rusoto_core", "tokio", "rayon"]
 blas = ["cc"]
 openblas = ["cc"]
 blas-static = ["cc"]

@@ -35,7 +35,7 @@ fn main() {
 
     let cache_dir = get_build_cache_dir(&blas);
 
-    #[cfg(feature = "s3_sync")]
+    #[cfg(feature = "s3-sync")]
     {
         sync_s3_cache(&cache_dir, &mut log_file, &blas);
     }
@@ -280,7 +280,7 @@ fn suitesparse_includes<'a>() -> Vec<&'a str> {
     ]
 }
 
-#[cfg(feature = "s3_sync")]
+#[cfg(feature = "s3-sync")]
 fn sync_s3_cache(cache_dir: &str, _log_file: &mut File, blas: &str) {
     use rayon::iter::ParallelBridge;
     use rayon::prelude::ParallelIterator;
