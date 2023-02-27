@@ -29,6 +29,8 @@ fn main() {
     println!("cargo:rustc-link-lib=dylib=gomp");
 
     let blas = get_blas_feature(&mut log_file);
+    writeln!(log_file, "blas: {blas}").unwrap();
+
     build_blas(&mut builder, &blas);
 
     let cache_dir = get_build_cache_dir(&blas);
@@ -83,7 +85,12 @@ fn get_build_cache(cache_dir: &str) -> Vec<String> {
 }
 
 #[allow(dead_code)]
-fn build_suitesparse(builder: &mut Build, build_cache: &Vec<String>, log_file: &mut File, blas: &str) {
+fn build_suitesparse(
+    builder: &mut Build,
+    build_cache: &Vec<String>,
+    log_file: &mut File,
+    blas: &str,
+) {
     let path = format!("SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
     cached_compilation(
         builder,
@@ -274,10 +281,13 @@ fn suitesparse_includes<'a>() -> Vec<&'a str> {
 }
 
 #[cfg(feature = "s3_sync")]
-fn sync_s3_cache(cache_dir: &str, log_file: &mut File, blas: &str) {
+fn sync_s3_cache(cache_dir: &str, _log_file: &mut File, blas: &str) {
+    use rayon::iter::ParallelBridge;
+    use rayon::prelude::ParallelIterator;
     use rusoto_core::Region;
     use rusoto_s3::{GetObjectRequest, ListObjectsV2Request, S3Client, S3};
     use tokio::runtime::Runtime;
+
     let region = Region::UsWest2;
     let s3_client = S3Client::new(region);
     let bucket = "umfpack";
@@ -290,71 +300,67 @@ fn sync_s3_cache(cache_dir: &str, log_file: &mut File, blas: &str) {
     let rt = Runtime::new().unwrap();
     let response = rt.block_on(s3_client.list_objects_v2(request)).unwrap();
     let objects = response.contents.unwrap();
-    for object in objects {
-        let key = object.key.unwrap();
-        let short_key = key.split("/").fold("", |_, part| part);
-        let local_path = format!("{}/{}", cache_dir, short_key);
-        let request = GetObjectRequest {
-            bucket: bucket.to_owned(),
-            key: key.to_owned(),
-            ..Default::default()
-        };
-        let response = rt.block_on(s3_client.get_object(request)).unwrap();
-        let body = response.body.unwrap();
-        let mut buffer = Vec::new();
-        body.into_blocking_read().read_to_end(&mut buffer).unwrap();
-        let mut file = File::create(&local_path).unwrap();
-        file.write_all(&buffer).unwrap();
-        writeln!(log_file, "downloading {short_key} to {local_path}").unwrap();
-    }
+    let _: Vec<()> = objects
+        .into_iter()
+        .par_bridge()
+        .map(|object| {
+            let key = object.key.unwrap();
+            let short_key = key.split("/").fold("", |_, part| part);
+            let local_path = format!("{}/{}", cache_dir, short_key);
+            let request = GetObjectRequest {
+                bucket: bucket.to_owned(),
+                key: key.to_owned(),
+                ..Default::default()
+            };
+            let response = rt.block_on(s3_client.get_object(request)).unwrap();
+            let body = response.body.unwrap();
+            let mut buffer = Vec::new();
+            body.into_blocking_read().read_to_end(&mut buffer).unwrap();
+            let mut file = File::create(&local_path).unwrap();
+            file.write_all(&buffer).unwrap();
+            // writeln!(log_file, "downloading {short_key} to {local_path}").unwrap();
+        })
+        .collect();
 }
 
 fn build_blas(builder: &mut Build, blas: &str) {
     match blas {
         "no-blas" => {
             builder.flag("-DNBLAS");
-        },
+        }
         "blas-static" => {
             println!("cargo:rustc-link-lib=static=blas");
-        },
+        }
         "openblas-static" => {
             println!("cargo:rustc-link-lib=static=openblas");
-        },
+        }
         "blas" => {
             println!("cargo:rustc-link-lib=dylib=blas");
-        },
+        }
         "openblas" => {
             println!("cargo:rustc-link-lib=dylib=openblas");
-        },
+        }
         _ => {
-            let msg = "Please enable one of the following features: ";
-            let msg = format!("{msg} 'no-blas', 'blas', 'blas-static', ");
-            let msg = format!("{msg} 'openblas', 'openblas-static'.");
-            panic!("{msg}");
-        },
-    };
-}
-
-fn get_blas_feature(log_file: &mut File) -> String {
-    let mut blas: &str;
-    cfg_if! {
-        if #[cfg(feature = "no-blas")] {
-            blas = "no-blas"
-        } else if #[cfg(feature = "blas-static")] {
-            blas = "blas-static"
-        } else if  #[cfg(feature = "openblas-static")] {
-            blas = "openblas-static"
-        } else if  #[cfg(feature = "blas")] {
-            blas = "blas"
-        } else if  #[cfg(feature = "openblas")] {
-            blas = "openblas"
-        } else {
             let msg = "Please enable one of the following features: ";
             let msg = format!("{msg} 'no-blas', 'blas', 'blas-static', ");
             let msg = format!("{msg} 'openblas', 'openblas-static'.");
             panic!("{msg}");
         }
     };
-    writeln!(log_file, "blas: {blas}").unwrap();
-    return blas.to_owned();
+}
+
+fn get_blas_feature(_log_file: &mut File) -> String {
+    cfg_if! {
+        if #[cfg(feature = "blas-static")] {
+            return "blas-static".to_owned();
+        } else if  #[cfg(feature = "openblas-static")] {
+            return "openblas-static".to_owned();
+        } else if  #[cfg(feature = "blas")] {
+            return "blas".to_owned();
+        } else if  #[cfg(feature = "openblas")] {
+            return "openblas".to_owned();
+        } else {
+            return "no-blas".to_owned();
+        }
+    };
 }
