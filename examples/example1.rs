@@ -1,6 +1,6 @@
 use umfpack::prelude::*;
 
-fn main(){
+fn main() {
     let blas_version = SuiteSparse_BLAS_library();
     println!("{blas_version}\n\n");
 
@@ -20,20 +20,17 @@ fn example1_rs() {
     let B = vec![8.0, 45.0, -3.0, 3.0, 19.0];
     let mut X = vec![0.0, 0.0, 0.0, 0.0, 0.0];
 
-    let mut info = Info::new();
-    let control = Control::new();
     let mut symbolic = Symbolic::new();
-    umfpack_di_symbolic(n, n, &Ap, &Ai, &Ax, &mut symbolic, &control, &mut info);
+    umfpack_di_symbolic(n, n, &Ap, &Ai, &Ax, &mut symbolic, None, None);
 
     let mut numeric = Numeric::new();
-    umfpack_di_numeric(&Ap, &Ai, &Ax, &symbolic, &mut numeric, &control, &mut info);
+    umfpack_di_numeric(&Ap, &Ai, &Ax, &symbolic, &mut numeric, None, None);
 
-    umfpack_di_solve(UMFPACK::A, &Ap, &Ai, &Ax, &mut X, &B, &numeric, &control, &mut info);
+    umfpack_di_solve(UMFPACK::A, &Ap, &Ai, &Ax, &mut X, &B, &numeric, None, None);
 
     for i in 0..(n as usize) {
         println!("X [{}] = {:.1}", i, X[i]);
     }
-
 }
 
 #[allow(non_snake_case)]

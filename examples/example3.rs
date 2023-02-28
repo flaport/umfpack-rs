@@ -8,22 +8,54 @@ fn main() {
     let Ax: Vec<f64> = get_Ax();
     let Az: Vec<f64> = Ax.iter().map(|_| 0.0).collect();
     let Bx: Vec<f64> = (0..n).map(|i| i as f64).collect();
-    let Bz: Vec<f64> = (0..n).map(|i| (n-i) as f64).collect();
+    let Bz: Vec<f64> = (0..n).map(|i| (n - i) as f64).collect();
     let mut Xx: Vec<f64> = (0..n).map(|_| 0.0).collect();
     let mut Xz: Vec<f64> = (0..n).map(|_| 0.0).collect();
 
     let mut info = Info::new();
     let control = Control::new();
     let mut symbolic = Symbolic::new();
-    umfpack_zi_symbolic(n, n, &Ap, &Ai, &Ax, Some(&Az), &mut symbolic, &control, &mut info);
+    umfpack_zi_symbolic(
+        n,
+        n,
+        &Ap,
+        &Ai,
+        &Ax,
+        Some(&Az),
+        &mut symbolic,
+        Some(&control),
+        Some(&mut info),
+    );
 
     println!("symbolic walltime: {}", info.umfpack_symbolic_walltime());
 
     let mut numeric = Numeric::new();
-    umfpack_zi_numeric(&Ap, &Ai, &Ax, Some(&Az), &symbolic, &mut numeric, &control, &mut info);
+    umfpack_zi_numeric(
+        &Ap,
+        &Ai,
+        &Ax,
+        Some(&Az),
+        &symbolic,
+        &mut numeric,
+        Some(&control),
+        Some(&mut info),
+    );
     println!("numeric walltime: {}", info.umfpack_numeric_walltime());
 
-    umfpack_zi_solve(UMFPACK::A, &Ap, &Ai, &Ax, Some(&Az), &mut Xx, Some(&mut Xz), &Bx, Some(&Bz), &numeric, &control, &mut info);
+    umfpack_zi_solve(
+        UMFPACK::A,
+        &Ap,
+        &Ai,
+        &Ax,
+        Some(&Az),
+        &mut Xx,
+        Some(&mut Xz),
+        &Bx,
+        Some(&Bz),
+        &numeric,
+        Some(&control),
+        Some(&mut info),
+    );
     println!("solve walltime: {}", info.umfpack_solve_walltime());
 
     for i in 0..10 {

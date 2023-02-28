@@ -1,6 +1,6 @@
-use std::ffi::c_void;
 use super::di::umfpack_di_free_numeric;
 use super::zi::umfpack_zi_free_numeric;
+use std::ffi::c_void;
 
 pub struct Numeric {
     pub data: *mut c_void,

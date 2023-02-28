@@ -1,6 +1,6 @@
-use std::ffi::c_void;
 use super::di::umfpack_di_free_symbolic;
 use super::zi::umfpack_zi_free_symbolic;
+use std::ffi::c_void;
 
 pub struct Symbolic {
     pub data: *mut c_void,

@@ -9,6 +9,7 @@ void example1()
   double Ax[] = { 2., 3., 3., -1., 4., 4., -3., 1., 2., 2., 6., 1. };
   double B[] = { 8., 45., -3., 3., 19. };
   double X[] = { 0., 0., 0., 0., 0. };
+
   double* null = (double*)NULL;
 
   void* Symbolic;

@@ -4,6 +4,7 @@ use super::numeric::Numeric;
 use super::symbolic::Symbolic;
 use super::sys::UMFPACK;
 use std::ffi::c_void;
+use std::ptr;
 
 mod c {
     use std::ffi::c_void;
@@ -52,8 +53,8 @@ pub fn umfpack_di_symbolic(
     Ai: &[i32],
     Ax: &[f64],
     symbolic: &mut Symbolic,
-    control: &Control,
-    info: &mut Info,
+    control: Option<&Control>,
+    info: Option<&mut Info>,
 ) -> i32 {
     unsafe {
         c::umfpack_di_symbolic(
@@ -63,8 +64,14 @@ pub fn umfpack_di_symbolic(
             Ai.as_ptr(),
             Ax.as_ptr(),
             &mut symbolic.data as *mut *mut c_void,
-            control.data().as_ptr(),
-            info.data.as_mut_ptr(),
+            match control {
+                None => ptr::null(),
+                Some(c) => c.data().as_ptr(),
+            },
+            match info {
+                None => ptr::null_mut(),
+                Some(i) => i.data.as_mut_ptr(),
+            },
         )
     }
 }
@@ -76,8 +83,8 @@ pub fn umfpack_di_numeric(
     Ax: &[f64],
     symbolic: &Symbolic,
     numeric: &mut Numeric,
-    control: &Control,
-    info: &mut Info,
+    control: Option<&Control>,
+    info: Option<&mut Info>,
 ) -> i32 {
     unsafe {
         c::umfpack_di_numeric(
@@ -86,8 +93,14 @@ pub fn umfpack_di_numeric(
             Ax.as_ptr(),
             symbolic.data,
             &mut numeric.data as *mut *mut c_void,
-            control.data().as_ptr(),
-            info.data.as_mut_ptr(),
+            match control {
+                None => ptr::null(),
+                Some(c) => c.data().as_ptr(),
+            },
+            match info {
+                None => ptr::null_mut(),
+                Some(i) => i.data.as_mut_ptr(),
+            },
         )
     }
 }
@@ -109,8 +122,8 @@ pub fn umfpack_di_solve(
     X: &mut [f64],
     B: &[f64],
     numeric: &Numeric,
-    control: &Control,
-    info: &mut Info,
+    control: Option<&Control>,
+    info: Option<&mut Info>,
 ) -> i32 {
     unsafe {
         c::umfpack_di_solve(
@@ -121,8 +134,14 @@ pub fn umfpack_di_solve(
             X.as_mut_ptr(),
             B.as_ptr(),
             numeric.data,
-            control.data().as_ptr(),
-            info.data.as_mut_ptr(),
+            match control {
+                None => ptr::null(),
+                Some(c) => c.data().as_ptr(),
+            },
+            match info {
+                None => ptr::null_mut(),
+                Some(i) => i.data.as_mut_ptr(),
+            },
         )
     }
 }
