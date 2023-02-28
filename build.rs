@@ -43,9 +43,12 @@ fn main() {
     let build_cache = get_build_cache(&cache_dir);
     build_suitesparse(&mut builder, &build_cache, &mut log_file, &blas);
 
-    let path = format!("examples/example1.c");
-    println!("cargo:rerun-if-changed=examples/example1.c");
-    builder.file(path).compile("example1");
+    let examples = ["example1", "example4"];
+    for example in examples.iter(){
+        let path = format!("examples/{example}.c");
+        println!("cargo:rerun-if-changed=examples/{example}.c");
+        builder.file(path).compile(example);
+    }
 }
 
 fn get_build_cache_dir(blas: &str) -> String {

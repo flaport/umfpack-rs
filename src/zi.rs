@@ -4,6 +4,7 @@ use super::numeric::Numeric;
 use super::symbolic::Symbolic;
 use super::sys::UMFPACK;
 use std::ffi::c_void;
+use std::ptr;
 
 mod c {
     use std::ffi::c_void;
@@ -56,7 +57,7 @@ pub fn umfpack_zi_symbolic(
     Ap: &[i32],
     Ai: &[i32],
     Ax: &[f64],
-    Az: &[f64],
+    Az: Option<&[f64]>,
     symbolic: &mut Symbolic,
     control: &Control,
     info: &mut Info,
@@ -68,7 +69,10 @@ pub fn umfpack_zi_symbolic(
             Ap.as_ptr(),
             Ai.as_ptr(),
             Ax.as_ptr(),
-            Az.as_ptr(),
+            match Az {
+                Some(Az) => Az.as_ptr(),
+                None => ptr::null(),
+            },
             &mut symbolic.data as *mut *mut c_void,
             control.data().as_ptr(),
             info.data.as_mut_ptr(),
@@ -81,7 +85,7 @@ pub fn umfpack_zi_numeric(
     Ap: &[i32],
     Ai: &[i32],
     Ax: &[f64],
-    Az: &[f64],
+    Az: Option<&[f64]>,
     symbolic: &Symbolic,
     numeric: &mut Numeric,
     control: &Control,
@@ -92,7 +96,10 @@ pub fn umfpack_zi_numeric(
             Ap.as_ptr(),
             Ai.as_ptr(),
             Ax.as_ptr(),
-            Az.as_ptr(),
+            match Az {
+                Some(Az) => Az.as_ptr(),
+                None => ptr::null(),
+            },
             symbolic.data,
             &mut numeric.data as *mut *mut c_void,
             control.data().as_ptr(),
@@ -116,11 +123,11 @@ pub fn umfpack_zi_solve(
     Ap: &[i32],
     Ai: &[i32],
     Ax: &[f64],
-    Az: &[f64],
+    Az: Option<&[f64]>,
     Xx: &mut [f64],
-    Xz: &mut [f64],
+    Xz: Option<&mut [f64]>,
     Bx: &[f64],
-    Bz: &[f64],
+    Bz: Option<&[f64]>,
     numeric: &Numeric,
     control: &Control,
     info: &mut Info,
@@ -131,11 +138,20 @@ pub fn umfpack_zi_solve(
             Ap.as_ptr(),
             Ai.as_ptr(),
             Ax.as_ptr(),
-            Az.as_ptr(),
+            match Az {
+                Some(Az) => Az.as_ptr(),
+                None => ptr::null(),
+            },
             Xx.as_mut_ptr(),
-            Xz.as_mut_ptr(),
+            match Xz {
+                Some(Xz) => Xz.as_mut_ptr(),
+                None => ptr::null_mut(),
+            },
             Bx.as_ptr(),
-            Bz.as_ptr(),
+            match Bz {
+                Some(Bz) => Bz.as_ptr(),
+                None => ptr::null(),
+            },
             numeric.data,
             control.data().as_ptr(),
             info.data.as_mut_ptr(),

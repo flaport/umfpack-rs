@@ -15,15 +15,15 @@ fn main() {
     let mut info = Info::new();
     let control = Control::new();
     let mut symbolic = Symbolic::new();
-    umfpack_zi_symbolic(n, n, &Ap, &Ai, &Ax, &Az, &mut symbolic, &control, &mut info);
+    umfpack_zi_symbolic(n, n, &Ap, &Ai, &Ax, Some(&Az), &mut symbolic, &control, &mut info);
 
     println!("symbolic walltime: {}", info.umfpack_symbolic_walltime());
 
     let mut numeric = Numeric::new();
-    umfpack_zi_numeric(&Ap, &Ai, &Ax, &Az, &symbolic, &mut numeric, &control, &mut info);
+    umfpack_zi_numeric(&Ap, &Ai, &Ax, Some(&Az), &symbolic, &mut numeric, &control, &mut info);
     println!("numeric walltime: {}", info.umfpack_numeric_walltime());
 
-    umfpack_zi_solve(UMFPACK::A, &Ap, &Ai, &Ax, &Az, &mut Xx, &mut Xz, &Bx, &Bz, &numeric, &control, &mut info);
+    umfpack_zi_solve(UMFPACK::A, &Ap, &Ai, &Ax, Some(&Az), &mut Xx, Some(&mut Xz), &Bx, Some(&Bz), &numeric, &control, &mut info);
     println!("solve walltime: {}", info.umfpack_solve_walltime());
 
     for i in 0..10 {

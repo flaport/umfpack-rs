@@ -15,12 +15,12 @@ fn main(){
     let mut info = Info::new();
     let control = Control::new();
     let mut symbolic = Symbolic::new();
-    umfpack_zi_symbolic(n, n, &Ap, &Ai, &Ax, &Az, &mut symbolic, &control, &mut info);
+    umfpack_zi_symbolic(n, n, &Ap, &Ai, &Ax, Some(&Az), &mut symbolic, &control, &mut info);
 
     let mut numeric = Numeric::new();
-    umfpack_zi_numeric(&Ap, &Ai, &Ax, &Az, &symbolic, &mut numeric, &control, &mut info);
+    umfpack_zi_numeric(&Ap, &Ai, &Ax, Some(&Az), &symbolic, &mut numeric, &control, &mut info);
 
-    umfpack_zi_solve(UMFPACK::A, &Ap, &Ai, &Ax, &Az, &mut Xx, &mut Xz, &Bx, &Bz, &numeric, &control, &mut info);
+    umfpack_zi_solve(UMFPACK::A, &Ap, &Ai, &Ax, Some(&Az), &mut Xx, Some(&mut Xz), &Bx, Some(&Bz), &numeric, &control, &mut info);
 
     for i in 0..(n as usize) {
         println!("x [{}] = {:.1}+{:.1}j", i, Xx[i], Xz[i]);
