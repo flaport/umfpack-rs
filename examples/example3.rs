@@ -1,3 +1,4 @@
+use num_complex::Complex64;
 use umfpack::prelude::*;
 
 #[allow(non_snake_case)]
@@ -5,12 +6,15 @@ fn main() {
     let n: i32 = 162;
     let Ap: Vec<i32> = get_Ap();
     let Ai: Vec<i32> = get_Ai();
-    let Ax: Vec<f64> = get_Ax();
-    let Az: Vec<f64> = Ax.iter().map(|_| 0.0).collect();
-    let Bx: Vec<f64> = (0..n).map(|i| i as f64).collect();
-    let Bz: Vec<f64> = (0..n).map(|i| (n - i) as f64).collect();
-    let mut Xx: Vec<f64> = (0..n).map(|_| 0.0).collect();
-    let mut Xz: Vec<f64> = (0..n).map(|_| 0.0).collect();
+    let Ax: Vec<f64> = get_Ax(); // real
+    let Az: Vec<Complex64> = Ax.into_iter().map(|re| Complex64 { re, im: 0.0 }).collect();
+    let Bz: Vec<Complex64> = (0..n)
+        .map(|i| Complex64 {
+            re: i as f64,
+            im: (n - i) as f64,
+        })
+        .collect();
+    let mut Xz: Vec<Complex64> = (0..n).map(|_| Complex64 { re: 0.0, im: 0.0 }).collect();
 
     let mut info = Info::new();
     let control = Control::new();
@@ -20,8 +24,7 @@ fn main() {
         n,
         &Ap,
         &Ai,
-        &Ax,
-        Some(&Az),
+        &Az,
         &mut symbolic,
         Some(&control),
         Some(&mut info),
@@ -33,8 +36,7 @@ fn main() {
     umfpack_zi_numeric(
         &Ap,
         &Ai,
-        &Ax,
-        Some(&Az),
+        &Az,
         &symbolic,
         &mut numeric,
         Some(&control),
@@ -46,12 +48,9 @@ fn main() {
         UMFPACK::A,
         &Ap,
         &Ai,
-        &Ax,
-        Some(&Az),
-        &mut Xx,
-        Some(&mut Xz),
-        &Bx,
-        Some(&Bz),
+        &Az,
+        &mut Xz,
+        &Bz,
         &numeric,
         Some(&control),
         Some(&mut info),
@@ -59,7 +58,13 @@ fn main() {
     println!("solve walltime: {}", info.umfpack_solve_walltime());
 
     for i in 0..10 {
-        println!("x [{}] = {:.1}+{:.1}j", i, Xx[i], Xz[i]);
+        println!(
+            "x [{}] = {:.1}{}{:.1}j",
+            i,
+            Xz[i].re,
+            if Xz[i].im < 0.0 { "" } else { "+" },
+            Xz[i].im
+        );
     }
     println!("...");
 }

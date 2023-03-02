@@ -3,6 +3,7 @@ use super::info::Info;
 use super::numeric::Numeric;
 use super::symbolic::Symbolic;
 use super::sys::UMFPACK;
+use num_complex::Complex64;
 use std::ffi::c_void;
 use std::ptr;
 
@@ -56,8 +57,7 @@ pub fn umfpack_zi_symbolic(
     m: i32,
     Ap: &[i32],
     Ai: &[i32],
-    Ax: &[f64],
-    Az: Option<&[f64]>,
+    Az: &[Complex64],
     symbolic: &mut Symbolic,
     control: Option<&Control>,
     info: Option<&mut Info>,
@@ -68,11 +68,8 @@ pub fn umfpack_zi_symbolic(
             m,
             Ap.as_ptr(),
             Ai.as_ptr(),
-            Ax.as_ptr(),
-            match Az {
-                Some(Az) => Az.as_ptr(),
-                None => ptr::null(),
-            },
+            Az.as_ptr() as *const f64,
+            ptr::null(),
             &mut symbolic.data as *mut *mut c_void,
             match control {
                 None => ptr::null(),
@@ -90,8 +87,7 @@ pub fn umfpack_zi_symbolic(
 pub fn umfpack_zi_numeric(
     Ap: &[i32],
     Ai: &[i32],
-    Ax: &[f64],
-    Az: Option<&[f64]>,
+    Az: &[Complex64],
     symbolic: &Symbolic,
     numeric: &mut Numeric,
     control: Option<&Control>,
@@ -101,11 +97,8 @@ pub fn umfpack_zi_numeric(
         c::umfpack_zi_numeric(
             Ap.as_ptr(),
             Ai.as_ptr(),
-            Ax.as_ptr(),
-            match Az {
-                Some(Az) => Az.as_ptr(),
-                None => ptr::null(),
-            },
+            Az.as_ptr() as *const f64,
+            ptr::null(),
             symbolic.data,
             &mut numeric.data as *mut *mut c_void,
             match control {
@@ -133,12 +126,9 @@ pub fn umfpack_zi_solve(
     sys: UMFPACK,
     Ap: &[i32],
     Ai: &[i32],
-    Ax: &[f64],
-    Az: Option<&[f64]>,
-    Xx: &mut [f64],
-    Xz: Option<&mut [f64]>,
-    Bx: &[f64],
-    Bz: Option<&[f64]>,
+    Az: &[Complex64],
+    Xz: &mut [Complex64],
+    Bz: &[Complex64],
     numeric: &Numeric,
     control: Option<&Control>,
     info: Option<&mut Info>,
@@ -148,21 +138,12 @@ pub fn umfpack_zi_solve(
             sys.to_int(),
             Ap.as_ptr(),
             Ai.as_ptr(),
-            Ax.as_ptr(),
-            match Az {
-                Some(Az) => Az.as_ptr(),
-                None => ptr::null(),
-            },
-            Xx.as_mut_ptr(),
-            match Xz {
-                Some(Xz) => Xz.as_mut_ptr(),
-                None => ptr::null_mut(),
-            },
-            Bx.as_ptr(),
-            match Bz {
-                Some(Bz) => Bz.as_ptr(),
-                None => ptr::null(),
-            },
+            Az.as_ptr() as *const f64,
+            ptr::null(),
+            Xz.as_mut_ptr() as *mut f64,
+            ptr::null_mut(),
+            Bz.as_ptr() as *const f64,
+            ptr::null(),
             numeric.data,
             match control {
                 None => ptr::null(),

@@ -1,16 +1,50 @@
+use num_complex::Complex64;
 use umfpack::prelude::*;
 
-#[allow(non_snake_case)]
 fn main() {
+    let blas_version = SuiteSparse_BLAS_library();
+    println!("{blas_version}\n\n");
+
+    println!("\n--- rust output: ---\n");
+    example2_rs();
+
+    println!("\n\n--- C output: ---\n");
+    example2_c();
+}
+
+#[allow(non_snake_case)]
+fn example2_rs() {
     let n = 5;
     let Ap = vec![0, 2, 5, 9, 10, 12];
     let Ai = vec![0, 1, 0, 2, 4, 1, 2, 3, 4, 2, 1, 4];
-    let Ax = vec![2.0, 3.0, 3.0, -1.0, 4.0, 4.0, -3.0, 1.0, 2.0, 2.0, 6.0, 1.0];
-    let Az = vec![2.0, 3.0, 3.0, -1.0, 4.0, 4.0, -3.0, 1.0, 2.0, 2.0, 6.0, 1.0];
-    let Bx = vec![8.0, 45.0, -3.0, 3.0, 19.0];
-    let Bz = vec![5.0, 4.0, 3.0, 2.0, 1.0];
-    let mut Xx = vec![0.0, 0.0, 0.0, 0.0, 0.0];
-    let mut Xz = vec![0.0, 0.0, 0.0, 0.0, 0.0];
+    let Az = vec![
+        Complex64 { re: 2.0, im: 1.0 },
+        Complex64 { re: 3.0, im: 1.0 },
+        Complex64 { re: 3.0, im: 1.0 },
+        Complex64 { re: -1.0, im: 1.0 },
+        Complex64 { re: 4.0, im: 1.0 },
+        Complex64 { re: 4.0, im: 1.0 },
+        Complex64 { re: -3.0, im: 1.0 },
+        Complex64 { re: 1.0, im: 1.0 },
+        Complex64 { re: 2.0, im: 1.0 },
+        Complex64 { re: 2.0, im: 1.0 },
+        Complex64 { re: 6.0, im: 1.0 },
+        Complex64 { re: 1.0, im: 1.0 },
+    ];
+    let Bz = vec![
+        Complex64 { re: 8.0, im: 3.0 },
+        Complex64 { re: 45.0, im: 3.0 },
+        Complex64 { re: -3.0, im: 3.0 },
+        Complex64 { re: 3.0, im: 3.0 },
+        Complex64 { re: 19.0, im: 3.0 },
+    ];
+    let mut Xz = vec![
+        Complex64 { re: 0.0, im: 0.0 },
+        Complex64 { re: 0.0, im: 0.0 },
+        Complex64 { re: 0.0, im: 0.0 },
+        Complex64 { re: 0.0, im: 0.0 },
+        Complex64 { re: 0.0, im: 0.0 },
+    ];
 
     let mut info = Info::new();
     let control = Control::new();
@@ -20,8 +54,7 @@ fn main() {
         n,
         &Ap,
         &Ai,
-        &Ax,
-        Some(&Az),
+        &Az,
         &mut symbolic,
         Some(&control),
         Some(&mut info),
@@ -31,8 +64,7 @@ fn main() {
     umfpack_zi_numeric(
         &Ap,
         &Ai,
-        &Ax,
-        Some(&Az),
+        &Az,
         &symbolic,
         &mut numeric,
         Some(&control),
@@ -43,20 +75,31 @@ fn main() {
         UMFPACK::A,
         &Ap,
         &Ai,
-        &Ax,
-        Some(&Az),
-        &mut Xx,
-        Some(&mut Xz),
-        &Bx,
-        Some(&Bz),
+        &Az,
+        &mut Xz,
+        &Bz,
         &numeric,
         Some(&control),
         Some(&mut info),
     );
 
     for i in 0..(n as usize) {
-        println!("x [{}] = {:.1}+{:.1}j", i, Xx[i], Xz[i]);
+        let p = if Xz[i].im < 0.0 { "" } else { "+" };
+        println!("x [{}] = {:.1}{}{:.1}j", i, Xz[i].re, p, Xz[i].im);
     }
 
     println!("Solve time: {}", info.umfpack_solve_walltime());
+}
+
+#[allow(non_snake_case)]
+fn example2_c() {
+    unsafe {
+        c::example2();
+    }
+}
+
+mod c {
+    extern "C" {
+        pub fn example2();
+    }
 }

@@ -1,4 +1,5 @@
 pub mod blas;
+pub mod complex;
 pub mod control;
 pub mod di;
 pub mod info;
