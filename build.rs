@@ -4,7 +4,7 @@ use std::env;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path,PathBuf};
 
 fn main() {
     let mut file = fs::File::create("build.log").unwrap();
@@ -265,24 +265,24 @@ fn cached_compilation(
 fn suitesparse_includes() -> Vec<String> {
     let out_dir = env::var("OUT_DIR").unwrap();
     vec![
-        format!("{}/SuiteSparse/AMD/Include", dir),
-        format!("{}/SuiteSparse/AMD/Source", dir),
-        format!("{}/SuiteSparse/CAMD/Include", dir),
-        format!("{}/SuiteSparse/CAMD/Source", dir),
-        format!("{}/SuiteSparse/CCOLAMD/Include", dir),
-        format!("{}/SuiteSparse/CCOLAMD/Source", dir),
-        format!("{}/SuiteSparse/CHOLMOD", dir),
-        format!("{}/SuiteSparse/CHOLMOD/Cholesky", dir),
-        format!("{}/SuiteSparse/CHOLMOD/Config", dir),
-        format!("{}/SuiteSparse/CHOLMOD/Core", dir),
-        format!("{}/SuiteSparse/CHOLMOD/Include", dir),
-        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/GKlib", dir),
-        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/include", dir),
-        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/libmetis", dir),
-        format!("{}/SuiteSparse/COLAMD/Include", dir),
-        format!("{}/SuiteSparse/COLAMD/Source", dir),
-        format!("{}/SuiteSparse/UMFPACK/Include", dir),
-        format!("{}/SuiteSparse/UMFPACK/Source", dir),
+        format!("{}/SuiteSparse/AMD/Include", out_dir),
+        format!("{}/SuiteSparse/AMD/Source", out_dir),
+        format!("{}/SuiteSparse/CAMD/Include", out_dir),
+        format!("{}/SuiteSparse/CAMD/Source", out_dir),
+        format!("{}/SuiteSparse/CCOLAMD/Include", out_dir),
+        format!("{}/SuiteSparse/CCOLAMD/Source", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/Cholesky", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/Config", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/Core", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/Include", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/GKlib", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/include", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/libmetis", out_dir),
+        format!("{}/SuiteSparse/COLAMD/Include", out_dir),
+        format!("{}/SuiteSparse/COLAMD/Source", out_dir),
+        format!("{}/SuiteSparse/UMFPACK/Include", out_dir),
+        format!("{}/SuiteSparse/UMFPACK/Source", out_dir),
     ]
 }
 
