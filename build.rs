@@ -35,6 +35,8 @@ fn main() {
 
     let cache_dir = get_build_cache_dir(&blas);
 
+    clone_suitesparse();
+
     #[cfg(feature = "s3-sync")]
     {
         sync_s3_cache(&cache_dir, &mut log_file, &blas);
@@ -260,26 +262,27 @@ fn cached_compilation(
     std::fs::copy(&out_library, &cached_library).unwrap();
 }
 
-fn suitesparse_includes<'a>() -> Vec<&'a str> {
+fn suitesparse_includes() -> Vec<String> {
+    let out_dir = env::var("OUT_DIR").unwrap();
     vec![
-        "SuiteSparse/AMD/Include",
-        "SuiteSparse/AMD/Source",
-        "SuiteSparse/CAMD/Include",
-        "SuiteSparse/CAMD/Source",
-        "SuiteSparse/CCOLAMD/Include",
-        "SuiteSparse/CCOLAMD/Source",
-        "SuiteSparse/CHOLMOD",
-        "SuiteSparse/CHOLMOD/Cholesky",
-        "SuiteSparse/CHOLMOD/Config",
-        "SuiteSparse/CHOLMOD/Core",
-        "SuiteSparse/CHOLMOD/Include",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/GKlib",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/include",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/libmetis",
-        "SuiteSparse/COLAMD/Include",
-        "SuiteSparse/COLAMD/Source",
-        "SuiteSparse/UMFPACK/Include",
-        "SuiteSparse/UMFPACK/Source",
+        format!("{}/SuiteSparse/AMD/Include", dir),
+        format!("{}/SuiteSparse/AMD/Source", dir),
+        format!("{}/SuiteSparse/CAMD/Include", dir),
+        format!("{}/SuiteSparse/CAMD/Source", dir),
+        format!("{}/SuiteSparse/CCOLAMD/Include", dir),
+        format!("{}/SuiteSparse/CCOLAMD/Source", dir),
+        format!("{}/SuiteSparse/CHOLMOD", dir),
+        format!("{}/SuiteSparse/CHOLMOD/Cholesky", dir),
+        format!("{}/SuiteSparse/CHOLMOD/Config", dir),
+        format!("{}/SuiteSparse/CHOLMOD/Core", dir),
+        format!("{}/SuiteSparse/CHOLMOD/Include", dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/GKlib", dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/include", dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/libmetis", dir),
+        format!("{}/SuiteSparse/COLAMD/Include", dir),
+        format!("{}/SuiteSparse/COLAMD/Source", dir),
+        format!("{}/SuiteSparse/UMFPACK/Include", dir),
+        format!("{}/SuiteSparse/UMFPACK/Source", dir),
     ]
 }
 
@@ -365,5 +368,19 @@ fn get_blas_feature(_log_file: &mut File) -> String {
         } else {
             return "no-blas".to_owned();
         }
+    };
+}
+
+
+fn clone_suitesparse() {
+    let out_dir = env::var("OUT_DIR").unwrap();
+
+    // Specify the path to the directory where the Git repository will be cloned
+    let git_repo_dir = Path::new(&out_dir).join("SuiteSparse");
+
+    // Clone the Git repository
+    let repo = match git2::Repository::clone("https://github.com/DrTimothyAldenDavis/SuiteSparse", &git_repo_dir) {
+        Ok(repo) => repo,
+        Err(e) => panic!("Failed to clone Git repository: {}", e),
     };
 }
