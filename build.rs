@@ -63,9 +63,6 @@ fn get_build_cache_dir(blas: &str) -> String {
         .join("umfpack")
         .join("out")
         .join(blas);
-    if !cache_dir.exists() {
-        fs::create_dir_all(&cache_dir).unwrap();
-    }
     let cache_dir = cache_dir.to_str().unwrap();
     return cache_dir.to_owned();
 }
@@ -96,7 +93,8 @@ fn build_suitesparse(
     log_file: &mut File,
     blas: &str,
 ) {
-    let path = format!("SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let path = format!("{out_dir}/SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
     cached_compilation(
         builder,
         &path,
@@ -115,25 +113,25 @@ fn build_suitesparse(
         "amd_post_tree.c",
     ];
     for filename in amd {
-        let path = format!("SuiteSparse/AMD/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/AMD/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let camd = ["camd_2.c", "camd_postorder.c"];
     for filename in camd {
-        let path = format!("SuiteSparse/CAMD/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/CAMD/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let colamd = ["colamd.c"];
     for filename in colamd {
-        let path = format!("SuiteSparse/COLAMD/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/COLAMD/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let ccolamd = ["ccolamd.c"];
     for filename in ccolamd {
-        let path = format!("SuiteSparse/CCOLAMD/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/CCOLAMD/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
@@ -164,30 +162,30 @@ fn build_suitesparse(
         "Supernodal/cholmod_super_symbolic.c",
     ];
     for filename in cholmod {
-        let path = format!("SuiteSparse/CHOLMOD/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/CHOLMOD/{filename}");
         let mut filename_parts = filename.split('/');
         filename_parts.next();
         let filename = filename_parts.next().unwrap();
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
-    let umfpack: &Vec<String> = &fs::read_dir("SuiteSparse/UMFPACK/Source")
+    let umfpack: &Vec<String> = &fs::read_dir(format!("{out_dir}/SuiteSparse/UMFPACK/Source"))
         .unwrap()
         .map(|f| f.unwrap().file_name().into_string().unwrap())
         .filter(|f| f.ends_with(".c"))
         .collect();
     for filename in umfpack {
-        let path = format!("SuiteSparse/UMFPACK/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/UMFPACK/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
-    let umfpack2: &Vec<String> = &fs::read_dir("SuiteSparse/UMFPACK/Source2")
+    let umfpack2: &Vec<String> = &fs::read_dir(format!("{out_dir}/SuiteSparse/UMFPACK/Source2"))
         .unwrap()
         .map(|f| f.unwrap().file_name().into_string().unwrap())
         .filter(|f| f.ends_with(".c"))
         .collect();
     for filename in umfpack2 {
-        let path = format!("SuiteSparse/UMFPACK/Source2/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/UMFPACK/Source2/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 }
@@ -265,6 +263,8 @@ fn cached_compilation(
 fn suitesparse_includes() -> Vec<String> {
     let out_dir = env::var("OUT_DIR").unwrap();
     vec![
+        format!("{}/SuiteSparse/SuiteSparse_config", out_dir),
+        format!("{}/SuiteSparse/AMD/Include", out_dir),
         format!("{}/SuiteSparse/AMD/Include", out_dir),
         format!("{}/SuiteSparse/AMD/Source", out_dir),
         format!("{}/SuiteSparse/CAMD/Include", out_dir),
@@ -293,6 +293,13 @@ fn sync_s3_cache(cache_dir: &str, _log_file: &mut File, blas: &str) {
     use rusoto_core::Region;
     use rusoto_s3::{GetObjectRequest, ListObjectsV2Request, S3Client, S3};
     use tokio::runtime::Runtime;
+
+    let cache_dir_path = PathBuf::from(&cache_dir);
+    if cache_dir_path.exists() {
+        return
+    } else {
+        fs::create_dir_all(&cache_dir).unwrap();
+    }
 
     let region = Region::UsWest2;
     let s3_client = S3Client::new(region);
@@ -379,8 +386,8 @@ fn clone_suitesparse() {
     let git_repo_dir = Path::new(&out_dir).join("SuiteSparse");
 
     // Clone the Git repository
-    let repo = match git2::Repository::clone("https://github.com/DrTimothyAldenDavis/SuiteSparse", &git_repo_dir) {
-        Ok(repo) => repo,
-        Err(e) => panic!("Failed to clone Git repository: {}", e),
+    match git2::Repository::clone("https://github.com/DrTimothyAldenDavis/SuiteSparse", &git_repo_dir) {
+        Ok(_) => return,
+        Err(_) => return,
     };
 }
