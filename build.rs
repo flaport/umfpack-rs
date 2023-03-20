@@ -4,8 +4,7 @@ use std::env;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn main() {
     let mut file = fs::File::create("build.log").unwrap();
@@ -36,6 +35,8 @@ fn main() {
 
     let cache_dir = get_build_cache_dir(&blas);
 
+    clone_suitesparse();
+
     #[cfg(feature = "s3-sync")]
     {
         sync_s3_cache(&cache_dir, &mut log_file, &blas);
@@ -62,9 +63,6 @@ fn get_build_cache_dir(blas: &str) -> String {
         .join("umfpack")
         .join("out")
         .join(blas);
-    if !cache_dir.exists() {
-        fs::create_dir_all(&cache_dir).unwrap();
-    }
     let cache_dir = cache_dir.to_str().unwrap();
     return cache_dir.to_owned();
 }
@@ -95,7 +93,8 @@ fn build_suitesparse(
     log_file: &mut File,
     blas: &str,
 ) {
-    let path = format!("SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let path = format!("{out_dir}/SuiteSparse/SuiteSparse_config/SuiteSparse_config.c");
     cached_compilation(
         builder,
         &path,
@@ -114,25 +113,25 @@ fn build_suitesparse(
         "amd_post_tree.c",
     ];
     for filename in amd {
-        let path = format!("SuiteSparse/AMD/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/AMD/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let camd = ["camd_2.c", "camd_postorder.c"];
     for filename in camd {
-        let path = format!("SuiteSparse/CAMD/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/CAMD/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let colamd = ["colamd.c"];
     for filename in colamd {
-        let path = format!("SuiteSparse/COLAMD/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/COLAMD/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
     let ccolamd = ["ccolamd.c"];
     for filename in ccolamd {
-        let path = format!("SuiteSparse/CCOLAMD/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/CCOLAMD/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
@@ -163,30 +162,30 @@ fn build_suitesparse(
         "Supernodal/cholmod_super_symbolic.c",
     ];
     for filename in cholmod {
-        let path = format!("SuiteSparse/CHOLMOD/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/CHOLMOD/{filename}");
         let mut filename_parts = filename.split('/');
         filename_parts.next();
         let filename = filename_parts.next().unwrap();
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
-    let umfpack: &Vec<String> = &fs::read_dir("SuiteSparse/UMFPACK/Source")
+    let umfpack: &Vec<String> = &fs::read_dir(format!("{out_dir}/SuiteSparse/UMFPACK/Source"))
         .unwrap()
         .map(|f| f.unwrap().file_name().into_string().unwrap())
         .filter(|f| f.ends_with(".c"))
         .collect();
     for filename in umfpack {
-        let path = format!("SuiteSparse/UMFPACK/Source/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/UMFPACK/Source/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 
-    let umfpack2: &Vec<String> = &fs::read_dir("SuiteSparse/UMFPACK/Source2")
+    let umfpack2: &Vec<String> = &fs::read_dir(format!("{out_dir}/SuiteSparse/UMFPACK/Source2"))
         .unwrap()
         .map(|f| f.unwrap().file_name().into_string().unwrap())
         .filter(|f| f.ends_with(".c"))
         .collect();
     for filename in umfpack2 {
-        let path = format!("SuiteSparse/UMFPACK/Source2/{filename}");
+        let path = format!("{out_dir}/SuiteSparse/UMFPACK/Source2/{filename}");
         cached_compilation(builder, &path, &filename, build_cache, log_file, blas);
     }
 }
@@ -261,26 +260,29 @@ fn cached_compilation(
     std::fs::copy(&out_library, &cached_library).unwrap();
 }
 
-fn suitesparse_includes<'a>() -> Vec<&'a str> {
+fn suitesparse_includes() -> Vec<String> {
+    let out_dir = env::var("OUT_DIR").unwrap();
     vec![
-        "SuiteSparse/AMD/Include",
-        "SuiteSparse/AMD/Source",
-        "SuiteSparse/CAMD/Include",
-        "SuiteSparse/CAMD/Source",
-        "SuiteSparse/CCOLAMD/Include",
-        "SuiteSparse/CCOLAMD/Source",
-        "SuiteSparse/CHOLMOD",
-        "SuiteSparse/CHOLMOD/Cholesky",
-        "SuiteSparse/CHOLMOD/Config",
-        "SuiteSparse/CHOLMOD/Core",
-        "SuiteSparse/CHOLMOD/Include",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/GKlib",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/include",
-        "SuiteSparse/CHOLMOD/SuiteSparse_metis/libmetis",
-        "SuiteSparse/COLAMD/Include",
-        "SuiteSparse/COLAMD/Source",
-        "SuiteSparse/UMFPACK/Include",
-        "SuiteSparse/UMFPACK/Source",
+        format!("{}/SuiteSparse/SuiteSparse_config", out_dir),
+        format!("{}/SuiteSparse/AMD/Include", out_dir),
+        format!("{}/SuiteSparse/AMD/Include", out_dir),
+        format!("{}/SuiteSparse/AMD/Source", out_dir),
+        format!("{}/SuiteSparse/CAMD/Include", out_dir),
+        format!("{}/SuiteSparse/CAMD/Source", out_dir),
+        format!("{}/SuiteSparse/CCOLAMD/Include", out_dir),
+        format!("{}/SuiteSparse/CCOLAMD/Source", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/Cholesky", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/Config", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/Core", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/Include", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/GKlib", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/include", out_dir),
+        format!("{}/SuiteSparse/CHOLMOD/SuiteSparse_metis/libmetis", out_dir),
+        format!("{}/SuiteSparse/COLAMD/Include", out_dir),
+        format!("{}/SuiteSparse/COLAMD/Source", out_dir),
+        format!("{}/SuiteSparse/UMFPACK/Include", out_dir),
+        format!("{}/SuiteSparse/UMFPACK/Source", out_dir),
     ]
 }
 
@@ -291,6 +293,13 @@ fn sync_s3_cache(cache_dir: &str, _log_file: &mut File, blas: &str) {
     use rusoto_core::Region;
     use rusoto_s3::{GetObjectRequest, ListObjectsV2Request, S3Client, S3};
     use tokio::runtime::Runtime;
+
+    let cache_dir_path = PathBuf::from(&cache_dir);
+    if cache_dir_path.exists() {
+        return;
+    } else {
+        fs::create_dir_all(&cache_dir).unwrap();
+    }
 
     let region = Region::UsWest2;
     let s3_client = S3Client::new(region);
@@ -366,5 +375,21 @@ fn get_blas_feature(_log_file: &mut File) -> String {
         } else {
             return "no-blas".to_owned();
         }
+    };
+}
+
+fn clone_suitesparse() {
+    let out_dir = env::var("OUT_DIR").unwrap();
+
+    // Specify the path to the directory where the Git repository will be cloned
+    let git_repo_dir = Path::new(&out_dir).join("SuiteSparse");
+
+    // Clone the Git repository
+    match git2::Repository::clone(
+        "https://github.com/DrTimothyAldenDavis/SuiteSparse",
+        &git_repo_dir,
+    ) {
+        Ok(_) => return,
+        Err(_) => return,
     };
 }
