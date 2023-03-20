@@ -6,3 +6,4 @@ build-cache/*
 .tags
 Cargo.lock
 target
+SuiteSparse
