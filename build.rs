@@ -7,7 +7,7 @@ fn main() {
     println!("cargo:include=/usr/include");
     println!("cargo:rustc-link-search=native=/usr/lib");
     println!("cargo:rustc-link-lib=dylib=gomp");
-    println!("cargo:rustc-link-lib=dylib=openblas");
+    println!("cargo:rustc-link-lib=dylib=blas");
 
     let ss_dir = clone_suitesparse();
 
@@ -140,10 +140,4 @@ fn suitesparse_includes(ss_dir: &str) -> Vec<String> {
         format!("{}/UMFPACK/Include", ss_dir),
         format!("{}/UMFPACK/Source", ss_dir),
     ]
-}
-
-fn current_directory() -> String {
-    let mut dir = env::current_exe().unwrap();
-    dir.pop();
-    return dir.to_str().unwrap().to_owned();
 }
