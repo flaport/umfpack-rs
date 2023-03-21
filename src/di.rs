@@ -9,6 +9,7 @@ use std::ptr;
 mod c {
     use std::ffi::c_void;
 
+    #[link(name="umfpack")]
     extern "C" {
         pub fn umfpack_di_symbolic(
             n: i32,

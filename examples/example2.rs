@@ -2,9 +2,6 @@ use num_complex::Complex64;
 use umfpack::prelude::*;
 
 fn main() {
-    let blas_version = SuiteSparse_BLAS_library();
-    println!("{blas_version}\n\n");
-
     println!("\n--- rust output: ---\n");
     example2_rs();
 
