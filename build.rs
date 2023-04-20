@@ -15,6 +15,15 @@ fn main() {
     builder
         .flag("-fopenmp")
         .flag("-static")
+        // todo: fix those warnings (let's ignore them for now...)
+        .flag("-Wno-sign-compare")
+        .flag("-Wno-unknown-pragmas")
+        .flag("-Wno-unused-variable")
+        .flag("-Wno-unused-parameter")
+        .flag("-Wno-empty-body")
+        .flag("-Wno-unused-but-set-variable")
+        .flag("-Wno-array-parameter")
+        .flag("-Wno-implicit-fallthrough")
         .includes(suitesparse_includes(&ss_dir));
 
     let ssconfig = [format!("{ss_dir}/SuiteSparse_config/SuiteSparse_config.c")];
@@ -34,9 +43,9 @@ fn main() {
     builder.files(amd).compile("amd");
 
     let camd: Vec<String> = ["camd_2.c", "camd_postorder.c"]
-    .iter()
-    .map(|f| format!("{ss_dir}/CAMD/Source/{f}"))
-    .collect();
+        .iter()
+        .map(|f| format!("{ss_dir}/CAMD/Source/{f}"))
+        .collect();
     builder.files(camd).compile("camd");
 
     let colamd = [format!("{ss_dir}/COLAMD/Source/colamd.c")];
