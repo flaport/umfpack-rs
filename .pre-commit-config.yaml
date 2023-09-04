@@ -1,12 +1,6 @@
 repos:
   - repo: local
     hooks:
-      - id: nbstripout
-        name: nbstripout
-        entry: nbstripout
-        language: python
-        pass_filenames: true
-        types: [jupyter]
       - id: rustfmt
         name: rustfmt
         entry: rustfmt
