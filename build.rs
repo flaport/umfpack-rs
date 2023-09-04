@@ -109,7 +109,7 @@ fn main() {
 }
 
 fn clone_suitesparse() -> String {
-    let out_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let out_dir = env::var("OUT_DIR").unwrap();
 
     // Specify the path to the directory where the Git repository will be cloned
     let ss_dir = Path::new(&out_dir).join("SuiteSparse");
