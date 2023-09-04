@@ -3,7 +3,12 @@ name = "umfpack"
 version = "0.0.0"
 edition = "2021"
 authors = ["Floris Laporte <floris.laporte@gmail.com>"]
-license-file = "LICENSE"
+readme = "README.md"
+license = "lgpl-2.1-only"
+description = "Some UMFPACK bindings for rust"
+documentation = "https://github.com/flaport/umfpack-rs"
+homepage = "https://github.com/flaport/umfpack-rs"
+repository = "https://github.com/flaport/umfpack-rs"
 
 [lib]
 name = "umfpack"
@@ -13,7 +18,7 @@ crate-type = ["lib", "cdylib"]
 default = ["cc"]
 
 [build-dependencies]
-git2 = "0.16.1"
+git2 = "0.18.0"
 cc = { version="1.0.79", features=["parallel"], optional=true }
 
 [dependencies]
