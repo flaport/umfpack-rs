@@ -1,9 +1,4 @@
-out.txt
-build.log
-build-cache/*
 *.out
-.ipynb_checkpoints
 .tags
 Cargo.lock
 target
-SuiteSparse
